@@ -1,0 +1,191 @@
+name: Release
+
+# Triggers, by design:
+#
+#   schedule          daily check of the npm registry; when a newer
+#                     @deepseek-ai/dsh exists, pin it, build every platform,
+#                     and publish a GitHub Release tagged desktop-v<version>.
+#   workflow_dispatch  manual build. Optional `upstream` input forces a
+#                     specific upstream version; otherwise the current pin is
+#                     rebuilt with an incremented desktop patch segment.
+#   push (desktop-v*)  pushing a desktop-v* tag builds and releases that exact
+#                     version (used for hotfixes and first-time bootstrap).
+#   repository_dispatch upstream-published — optional webhook hook: if the
+#                     deepseek-harness repo (or a fork) ever dispatches this
+#                     event on publish, the release starts immediately
+#                     instead of waiting for the next scheduled run.
+#
+# The whole pipeline runs in one workflow because a tag pushed with
+# GITHUB_TOKEN does not trigger new workflow runs: bumping, building, and
+# releasing happen in the same run.
+
+on:
+  workflow_dispatch:
+    inputs:
+      upstream:
+        description: 'Force an upstream version (blank = npm latest when newer)'
+        required: false
+        default: ''
+  schedule:
+    # Daily, a few minutes after 03:00 UTC. Scheduled workflows run only on
+    # the default branch.
+    - cron: '23 3 * * *'
+  push:
+    tags:
+      - 'desktop-v*'
+  repository_dispatch:
+    types: [upstream-published]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    name: Plan release
+    runs-on: ubuntu-latest
+    outputs:
+      build: ${{ steps.decide.outputs.build }}
+      version: ${{ steps.decide.outputs.version }}
+      upstream: ${{ steps.decide.outputs.upstream }}
+      bump: ${{ steps.decide.outputs.bump }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check upstream
+        id: check
+        run: node scripts/check-upstream.mjs >> "$GITHUB_OUTPUT"
+
+      - name: Decide and bump
+        id: decide
+        env:
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+          INPUT_UPSTREAM: ${{ inputs.upstream }}
+          UPDATE: ${{ steps.check.outputs.update }}
+          LATEST: ${{ steps.check.outputs.latest }}
+        run: node scripts/release-plan.mjs >> "$GITHUB_OUTPUT"
+
+      - name: Commit version bump
+        if: steps.decide.outputs.bump == 'true'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json package-lock.json
+          git commit -m "build: bump to ${{ steps.decide.outputs.version }} (embedded @deepseek-ai/dsh ${{ steps.decide.outputs.upstream }})" || echo "nothing to commit"
+          git push
+
+  build:
+    name: Build ${{ matrix.name }}
+    needs: plan
+    if: needs.plan.outputs.build == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows
+            os: windows-latest
+            args: --win --x64
+            optional: false
+            paths: |
+              dist/*.exe
+              dist/*.blockmap
+              dist/*.zip
+              dist/*.yml
+          # One job per architecture: npm ci resolves arch-specific native
+          # optional dependencies (node-pty, ripgrep, koffi), so an x64
+          # package must be installed and built on an Intel runner.
+          - name: macos-arm64
+            os: macos-latest
+            args: --mac --arm64
+            optional: false
+            paths: |
+              dist/*-arm64.dmg
+              dist/*-arm64.zip
+              dist/*.blockmap
+              dist/*.yml
+          # The Intel runner may not be available to every account; an
+          # optional cell keeps the whole release from blocking on it.
+          - name: macos-x64
+            os: macos-15-intel
+            args: --mac --x64
+            optional: true
+            paths: |
+              dist/*.dmg
+              dist/*.zip
+              dist/*.blockmap
+              dist/*.yml
+          - name: linux
+            os: ubuntu-latest
+            args: --linux --x64
+            optional: false
+            paths: |
+              dist/*.AppImage
+              dist/*.deb
+              dist/*.zip
+              dist/*.yml
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.optional }}
+    timeout-minutes: 60
+    env:
+      # Unsigned builds are intentional for now (see README); never probe for
+      # certificates.
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Package
+        run: npx electron-builder ${{ matrix.args }} --publish never
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.name }}
+          path: ${{ matrix.paths }}
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    needs: [plan, build]
+    if: needs.plan.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: desktop-v${{ needs.plan.outputs.version }}
+          name: DeepSeek Harness Desktop v${{ needs.plan.outputs.version }}
+          draft: false
+          prerelease: ${{ contains(needs.plan.outputs.version, '-') }}
+          generate_release_notes: true
+          body: |
+            Embedded engine: [@deepseek-ai/dsh v${{ needs.plan.outputs.upstream }}](https://www.npmjs.com/package/@deepseek-ai/dsh/v/${{ needs.plan.outputs.upstream }})
+
+            Upstream project: https://github.com/deepseek-ai/deepseek-harness
+          files: artifacts/**

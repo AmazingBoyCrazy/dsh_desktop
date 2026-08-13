@@ -1,0 +1,108 @@
+{
+  "name": "deepseek-harness-desktop",
+  "productName": "DeepSeek Harness Desktop",
+  "version": "0.1.0-rc.6.0",
+  "description": "Desktop client for DeepSeek Harness: double-click to launch, the official web GUI runs self-hosted from the embedded @deepseek-ai/dsh engine. No terminal, no Node.js required.",
+  "license": "MIT",
+  "author": {
+    "name": "hongfeiyucode",
+    "email": "hongfeiyucode@users.noreply.github.com"
+  },
+  "homepage": "https://github.com/hongfeiyucode/deepseek-harness-desktop",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hongfeiyucode/deepseek-harness-desktop.git"
+  },
+  "private": true,
+  "type": "module",
+  "main": "src/main/main.mjs",
+  "desktopName": "deepseek-harness-desktop.desktop",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "postinstall": "node scripts/ensure-electron.mjs",
+    "start": "electron .",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "dist:linux": "electron-builder --linux",
+    "smoke": "node scripts/smoke-dsh-web.mjs",
+    "check:upstream": "node scripts/check-upstream.mjs"
+  },
+  "dependencies": {
+    "@deepseek-ai/dsh": "0.1.0-rc.6",
+    "electron-updater": "6.8.9",
+    "@deepseek-ai/cordis-plugin-group": "^1.0.1",
+    "@deepseek-ai/dsh-anonymous-user-id": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-atomic-write": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-bash-local": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-code-runtime": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-compaction": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-fs": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-invariants": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-output-retention": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-sandbox": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-scope": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-session-telemetry": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-session-title-llm": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-shell": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-spill": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-subagent-in-process-driver": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-subprocess": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-timeout": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-workflow": "^0.1.0-rc.6"
+  },
+  "devDependencies": {
+    "electron": "43.4.0",
+    "electron-builder": "26.15.3",
+    "semver": "7.8.5"
+  },
+  "build": {
+    "appId": "io.github.hongfeiyucode.deepseek-harness-desktop",
+    "productName": "DeepSeek Harness Desktop",
+    "asar": false,
+    "npmRebuild": false,
+    "publish": {
+      "provider": "github",
+      "owner": "hongfeiyucode",
+      "repo": "deepseek-harness-desktop"
+    },
+    "directories": {
+      "buildResources": "build",
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "package.json",
+      "!**/*.map"
+    ],
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "zip", "arch": ["x64"] }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    },
+    "mac": {
+      "icon": "build/icon.png",
+      "category": "public.app-category.developer-tools",
+      "identity": null,
+      "target": ["dmg", "zip"]
+    },
+    "linux": {
+      "icon": "build/icon.png",
+      "category": "Development",
+      "syncDesktopName": true,
+      "target": [
+        { "target": "AppImage", "arch": ["x64"] },
+        { "target": "deb", "arch": ["x64"] }
+      ]
+    }
+  }
+}

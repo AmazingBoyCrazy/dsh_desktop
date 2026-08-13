@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    # Both names: repositories whose default branch was created before
+    # GitHub's main-rename keep `master`.
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Syntax + engine + desktop smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Syntax check
+        run: |
+          for file in src/main/*.mjs src/preload/*.mjs scripts/*.mjs; do
+            node --check "$file"
+          done
+
+      - name: Upstream status (informational)
+        run: node scripts/check-upstream.mjs
+
+      - name: Engine smoke — boots the embedded dsh web profile
+        run: npm run smoke
+
+      - name: Desktop smoke — Electron boots the engine for real (linux, headless)
+        env:
+          DSH_DESKTOP_SMOKE: '1'
+          DSH_HOME: ${{ runner.temp }}/dsh-desktop-smoke-home
+          DSH_TELEMETRY_DISABLED: '1'
+        run: xvfb-run -a npx electron . --no-sandbox
+        timeout-minutes: 6
+
+      - name: Packaged smoke — the packaged tree boots its engine (catches pruned peer deps)
+        run: |
+          npx electron-builder --linux --dir --publish never
+          # Copy the packaged app OUT of the repo first: otherwise the engine
+          # could resolve missing packages by walking up into the repo's own
+          # node_modules, masking exactly the pruning bug this step guards.
+          ISODIR=$(mktemp -d)
+          cp -r dist/linux-unpacked/resources/app "$ISODIR/app"
+          node scripts/smoke-dsh-web.mjs --entry "$ISODIR/app/node_modules/@deepseek-ai/dsh/lib/bin.js"
+        timeout-minutes: 15

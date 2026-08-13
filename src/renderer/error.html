@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'self'" />
+  <title>DeepSeek Harness Desktop — engine error</title>
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: #10141a; color: #c7d0dc; font: 15px/1.6 system-ui, "Segoe UI", sans-serif;
+    }
+    .card { max-width: 46rem; width: 100%; padding: 2rem; box-sizing: border-box; }
+    h1 { font-size: 20px; color: #e8edf4; margin: 0 0 .6rem; }
+    .error {
+      background: #221316; border: 1px solid #5c2b30; border-radius: 8px;
+      padding: .8rem 1rem; color: #f0b9bc; margin: 0 0 1rem; word-break: break-word;
+    }
+    pre {
+      background: #0c0f13; border: 1px solid #232b36; border-radius: 8px;
+      padding: .8rem 1rem; max-height: 16rem; overflow: auto;
+      font: 12px/1.5 ui-monospace, Consolas, monospace; color: #9aa7b8; margin: 0 0 1.2rem;
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .row { display: flex; gap: .8rem; }
+    button {
+      padding: .55rem 1.2rem; border-radius: 6px; border: 1px solid #33405a;
+      background: #1a2332; color: #dbe4f0; font-size: 14px; cursor: pointer;
+    }
+    button.primary { background: #24507a; border-color: #35689c; }
+    button:hover { filter: brightness(1.15); }
+    .meta { color: #7d8a9d; font-size: 13px; margin: 1.2rem 0 0; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>The embedded harness engine failed to start</h1>
+    <p class="error" id="error">…</p>
+    <pre id="tail">…</pre>
+    <div class="row">
+      <button class="primary" id="restart">Restart engine</button>
+      <button id="quit">Quit</button>
+    </div>
+    <p class="meta" id="meta"></p>
+  </div>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    function render(info) {
+      $('error').textContent = info.error || 'Unknown error';
+      $('tail').textContent = info.harnessLogTail || '(no harness log output)';
+      $('meta').textContent =
+        'Desktop v' + info.appVersion + ' · embedded harness v' + info.dshVersion +
+        ' · engine log: ' + info.harnessLogPath + ' · DSH_HOME: ' + info.dshHome;
+    }
+    if (window.desktop) {
+      window.desktop.getInfo().then(render).catch(() => {});
+      $('restart').addEventListener('click', () => {
+        $('restart').disabled = true;
+        $('error').textContent = 'Restarting the engine…';
+        window.desktop.restartHarness().catch(() => {});
+      });
+      $('quit').addEventListener('click', () => { window.desktop.quit(); });
+    } else {
+      $('error').textContent = 'Desktop bridge unavailable.';
+    }
+  </script>
+</body>
+</html>
