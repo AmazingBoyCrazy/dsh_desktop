@@ -30,6 +30,13 @@ const require = createRequire(import.meta.url)
 export const DESKTOP_PICKER_PLUGIN_PATH = fileURLToPath(new URL('../assets/plugins/dsh-desktop-native-picker.mjs', import.meta.url))
 
 /**
+ * Seam patch preloaded into the engine on Windows (--import): defaults
+ * `windowsHide: true` on every child_process entry point so tool calls do
+ * not flash console windows. See the module for the full rationale.
+ */
+export const WIN32_CHILD_PROCESS_PATCH_PATH = fileURLToPath(new URL('./win32-child-process-patch.mjs', import.meta.url))
+
+/**
  * Write the runtime composition overlay the engine boots with: it disables
  * the upstream directory-picker-auto row and inserts the desktop backend
  * (referenced as a file:// URL, so it works wherever the app is installed)
@@ -198,7 +205,16 @@ export class HarnessServer {
     // ESM loader. Under plain Node the `node-addon-require-builtin` fallback
     // provides it; Electron's Node build does not load that native addon, so
     // expose the internals the same way Node's own flag does.
-    const nodeArgs = ['--expose-internals', entry, ...args]
+    const nodeArgs = ['--expose-internals']
+    // On Windows the engine has no console (spawned hidden), so every
+    // console-subsystem child it spawns (bash, pwsh, ripgrep, ...) would get
+    // a flashing terminal window. Preload the seam patch that defaults
+    // `windowsHide: true` on all child_process entry points; harmless no-op
+    // on POSIX, so it is only passed on win32.
+    if (process.platform === 'win32') {
+      nodeArgs.push('--import', WIN32_CHILD_PROCESS_PATCH_PATH)
+    }
+    nodeArgs.push(entry, ...args)
     const env = { ...process.env, [NODE_MODE_ENV]: '1' }
     // Keep the child windowless on Windows; ELECTRON_RUN_AS_NODE ignores it elsewhere.
     env.ELECTRON_NO_ATTACH_CONSOLE = '1'

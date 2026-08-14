@@ -85,6 +85,9 @@ jobs:
       - name: Engine smoke — boots the embedded dsh web profile
         run: npm run smoke
 
+      - name: Console patch probe — hidden children under Electron's Node
+        run: node scripts/win32-console-patch-probe.mjs
+
       - name: Desktop smoke — Electron boots the engine for real (windows)
         env:
           DSH_DESKTOP_SMOKE: '1'
