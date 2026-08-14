@@ -83,6 +83,15 @@ if (process.platform === 'win32') {
     return options
   }
 
+  /** Diagnostic: log every spawn the engine performs (lands in dsh-web.log). */
+  const logSpawn = (name, file) => {
+    try {
+      console.error(`[dsh-desktop-patch] spawn ${name}: ${typeof file === 'string' ? file : String(file)}`)
+    } catch {
+      // Logging must never break a spawn.
+    }
+  }
+
   /**
    * Patch one spawn-shaped API: `(file[, args][, options])` / fork-shaped
    * `(modulePath[, args][, options])`. The `spawn(file, options)` short form
@@ -92,6 +101,7 @@ if (process.platform === 'win32') {
     const original = childProcess[name]
     if (typeof original !== 'function') return
     childProcess[name] = function (file, args, options) {
+      logSpawn(name, file)
       if (Array.isArray(args)) {
         return original.call(this, file, args, hide(options))
       }
@@ -112,6 +122,7 @@ if (process.platform === 'win32') {
     const original = childProcess[name]
     if (typeof original !== 'function') return
     childProcess[name] = function (command, arg2, arg3, arg4) {
+      logSpawn(name, command)
       if (hasArgvArray && Array.isArray(arg2)) {
         return original.call(this, command, arg2, hide(arg3), arg4)
       }
