@@ -57,15 +57,19 @@ if (process.platform === 'win32') {
       const getConsoleWindow = kernel32.func('void* GetConsoleWindow(void)')
       const showWindow = user32.func('bool ShowWindow(void*, int)')
       // FALSE when a console already exists (then children inherit it — fine).
-      if (allocConsole()) {
+      const allocResult = allocConsole()
+      if (allocResult) {
         const hwnd = getConsoleWindow()
         if (hwnd) showWindow(hwnd, 0) // SW_HIDE
         childProcess._dshWin32HiddenConsole = true
       }
       childProcess._dshEngineHasConsole = Boolean(getConsoleWindow())
-    } catch {
+      // Diagnostic: lands in the engine log (dsh-web.log) via stderr.
+      console.error(`[dsh-desktop-patch] allocConsole=${allocResult} hasConsole=${childProcess._dshEngineHasConsole} hidden=${childProcess._dshWin32HiddenConsole === true}`)
+    } catch (error) {
       // koffi unavailable or API failure: degrade to the child_process patch
       // alone (windowsHide still covers the plain subprocess paths).
+      console.error(`[dsh-desktop-patch] hidden console failed: ${String(error)}`)
     }
   }
   allocateHiddenConsole()
