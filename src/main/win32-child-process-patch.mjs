@@ -86,8 +86,10 @@ if (process.platform === 'win32') {
   allocateHiddenConsole()
 
   /** Self-referential file:// specifier, used to preload this patch into the
-   * sandbox runner child (see maybeInjectSelf). */
-  const selfSpecifier = pathToFileURL(new URL(import.meta.url)).href
+   * sandbox runner child (see maybeInjectSelf). import.meta.url is already a
+   * file:// URL string — pass it through verbatim (pathToFileURL would need
+   * a plain path, and new URL(...) yields an object, which crashes). */
+  const selfSpecifier = import.meta.url
 
   /**
    * The windows-acl sandbox runner is spawned as `[process.execPath, runner]`.
