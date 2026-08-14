@@ -27,6 +27,16 @@
  *    console and the runner's own children would pop windows again; plain
  *    subprocesses are equally fine inheriting the hidden console.
  *
+ * 3. The windows-acl sandbox runner is spawned as `[process.execPath, ...]`:
+ *    node.exe under the CLI (a console app that inherits the terminal
+ *    console) but electron.exe under the desktop — a GUI-subsystem binary
+ *    that never inherits a console, so the runner's restricted-token
+ *    children (CreateProcessAsUserW, no console flags by upstream design)
+ *    would get a brand-new visible console per command. The spawn wrapper
+ *    therefore injects THIS module into the runner's argv (--import), so the
+ *    runner allocates its own hidden console for the confined children to
+ *    inherit.
+ *
  * ESM named imports of builtin modules are live bindings over the CJS
  * exports object, so patching `require('node:child_process').spawn` here
  * (loaded before the engine entry) is visible to the engine's own
@@ -35,6 +45,7 @@
  */
 
 import { createRequire } from 'node:module'
+import { pathToFileURL } from 'node:url'
 
 const require = createRequire(import.meta.url)
 const childProcess = require('node:child_process')
@@ -74,6 +85,30 @@ if (process.platform === 'win32') {
   }
   allocateHiddenConsole()
 
+  /** Self-referential file:// specifier, used to preload this patch into the
+   * sandbox runner child (see maybeInjectSelf). */
+  const selfSpecifier = pathToFileURL(new URL(import.meta.url)).href
+
+  /**
+   * The windows-acl sandbox runner is spawned as `[process.execPath, runner]`.
+   * Under the CLI, process.execPath is node.exe (a console app) which
+   * inherits the terminal console, so the runner's restricted-token children
+   * share it (upstream's design). Under the desktop, process.execPath is
+   * electron.exe — a GUI-subsystem binary that NEVER inherits a console — so
+   * the runner has none and its CreateProcessAsUserW children get a
+   * brand-new visible console per command. Inject this same patch into the
+   * runner's argv: it allocates a hidden console in the runner, which the
+   * confined children then inherit.
+   */
+  const maybeInjectSelf = (argv) => {
+    if (!Array.isArray(argv)) return argv
+    if (argv.some((a) => typeof a === 'string' && a.includes('dsh-sandbox-windows-acl'))) {
+      console.error('[dsh-desktop-patch] injecting self into sandbox runner')
+      return [argv[0], '--import', selfSpecifier, ...argv.slice(1)]
+    }
+    return argv
+  }
+
   /** Default-inject windowsHide when there is no console to inherit. */
   const hide = (options) => {
     if (options === null || typeof options !== 'object' || Array.isArray(options)) options = {}
@@ -103,7 +138,7 @@ if (process.platform === 'win32') {
     childProcess[name] = function (file, args, options) {
       logSpawn(name, file)
       if (Array.isArray(args)) {
-        return original.call(this, file, args, hide(options))
+        return original.call(this, file, maybeInjectSelf(args), hide(options))
       }
       // spawn(file, options) short form (or bare spawn(file)).
       if (args !== undefined && args !== null && typeof args === 'object') {
