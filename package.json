@@ -1,7 +1,7 @@
 {
   "name": "deepseek-harness-desktop",
   "productName": "DeepSeek Harness Desktop",
-  "version": "0.1.0-rc.6.0",
+  "version": "0.1.0-rc.6.1",
   "description": "Desktop client for DeepSeek Harness: double-click to launch, the official web GUI runs self-hosted from the embedded @deepseek-ai/dsh engine. No terminal, no Node.js required.",
   "license": "MIT",
   "author": {
@@ -82,8 +82,18 @@
     "win": {
       "icon": "build/icon.png",
       "target": [
-        { "target": "nsis", "arch": ["x64"] },
-        { "target": "zip", "arch": ["x64"] }
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
+        }
       ]
     },
     "nsis": {
@@ -95,15 +105,28 @@
       "icon": "build/icon.png",
       "category": "public.app-category.developer-tools",
       "identity": null,
-      "target": ["dmg", "zip"]
+      "target": [
+        "dmg",
+        "zip"
+      ]
     },
     "linux": {
       "icon": "build/icon.png",
       "category": "Development",
       "syncDesktopName": true,
       "target": [
-        { "target": "AppImage", "arch": ["x64"] },
-        { "target": "deb", "arch": ["x64"] }
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
       ]
     }
   }
