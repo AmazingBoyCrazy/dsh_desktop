@@ -93,6 +93,9 @@ if (status !== 200) {
 console.log(`smoke: engine serves ${url} (HTTP 200)`)
 
 // The harness treats SIGTERM as a supervisor's stop request and exits 0.
+// That graceful path exists on POSIX only: on Windows, SIGTERM is a hard
+// terminate (code null, signal SIGTERM) — Node cannot deliver the handler.
+// Both are the platform's clean shutdown, so each asserts its own shape.
 child.kill('SIGTERM')
 const exit = await new Promise((resolve) => {
   const timer = setTimeout(() => {
@@ -104,7 +107,11 @@ const exit = await new Promise((resolve) => {
     resolve({ code, signal })
   })
 })
-if (exit.code !== 0) {
+if (process.platform === 'win32') {
+  if (!(exit.code === null && exit.signal === 'SIGTERM')) {
+    fail(`engine did not terminate on SIGTERM: code ${String(exit.code)} signal ${String(exit.signal)}`)
+  }
+} else if (exit.code !== 0) {
   fail(`engine did not shut down cleanly: code ${String(exit.code)} signal ${String(exit.signal)}`)
 }
 
