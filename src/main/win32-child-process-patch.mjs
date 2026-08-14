@@ -61,7 +61,16 @@ if (process.platform === 'win32') {
     ? (...args) => { console.error('[dsh-desktop-patch]', ...args) }
     : () => {}
 
-  /** Give this console-less process a hidden console (best effort). */
+  /**
+   * Give this console-less process a console children can inherit, PREFERRING
+   * to attach to the parent's existing console instead of allocating a new
+   * one. Every sandbox runner is a direct child of the engine, which already
+   * owns one hidden console; an attach shares that same console object, so a
+   * per-command AllocConsole (whose console window briefly appears before
+   * SW_HIDE) never happens. The engine itself has no console-bearing parent
+   * (the desktop main is a GUI binary), so it falls back to
+   * AllocConsole + SW_HIDE — the single, startup-only flash.
+   */
   function allocateHiddenConsole() {
     try {
       const koffi = require('koffi')
@@ -69,17 +78,24 @@ if (process.platform === 'win32') {
       const user32 = koffi.load('user32.dll')
       // GetConsoleWindow lives in kernel32 (not user32) on modern Windows.
       const allocConsole = kernel32.func('bool AllocConsole(void)')
+      const attachConsole = kernel32.func('bool AttachConsole(uint)')
       const getConsoleWindow = kernel32.func('void* GetConsoleWindow(void)')
       const showWindow = user32.func('bool ShowWindow(void*, int)')
-      // FALSE when a console already exists (then children inherit it — fine).
-      const allocResult = allocConsole()
-      if (allocResult) {
-        const hwnd = getConsoleWindow()
-        if (hwnd) showWindow(hwnd, 0) // SW_HIDE
-        childProcess._dshWin32HiddenConsole = true
+      const ATTACH_PARENT_PROCESS = 0xFFFFFFFF // (DWORD)-1
+      if (!getConsoleWindow()) {
+        if (!attachConsole(ATTACH_PARENT_PROCESS)) {
+          // No console-bearing parent (the engine itself): allocate one and
+          // hide it. FALSE when a console already exists (then children
+          // inherit it — fine).
+          if (allocConsole()) {
+            const hwnd = getConsoleWindow()
+            if (hwnd) showWindow(hwnd, 0) // SW_HIDE
+            childProcess._dshWin32HiddenConsole = true
+          }
+        }
       }
       childProcess._dshEngineHasConsole = Boolean(getConsoleWindow())
-      debug('allocConsole=', allocResult, 'hasConsole=', childProcess._dshEngineHasConsole, 'hidden=', childProcess._dshWin32HiddenConsole === true)
+      debug('hasConsole=', childProcess._dshEngineHasConsole, 'hidden=', childProcess._dshWin32HiddenConsole === true, 'parentAttached=', !childProcess._dshWin32HiddenConsole && childProcess._dshEngineHasConsole)
     } catch (error) {
       // koffi unavailable or API failure: degrade to the child_process patch
       // alone (windowsHide still covers the plain subprocess paths).
