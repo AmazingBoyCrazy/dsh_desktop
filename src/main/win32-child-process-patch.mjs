@@ -95,6 +95,38 @@ if (process.platform === 'win32') {
   const selfSpecifier = import.meta.url
 
   /**
+   * Whether an argv (spawn args WITHOUT the program) is the windows-acl
+   * sandbox runner invocation. Matches both the package path (current
+   * upstream layout) and a structural fallback (a node entry named
+   * runner.js/runner.ts carrying the runner's flag vocabulary), so the
+   * injection survives upstream renames or relocations.
+   * @param argv - spawn args (args[0] is the entry script).
+   */
+  function isSandboxRunnerArgv(argv) {
+    if (!Array.isArray(argv) || argv.length === 0) return false
+    const [entry, ...rest] = argv
+    if (typeof entry !== 'string' || entry === '') return false
+    if (entry.includes('dsh-sandbox-windows-acl')) return true
+    if (/[\\/]runner\.(js|ts)$/u.test(entry)) {
+      return rest.some((a) => a === '--mode' || a === '--temp' || a === '--workspace')
+    }
+    return false
+  }
+
+  /**
+   * Build the injected argv for the sandbox runner. spawn(file, args): args
+   * are the arguments ONLY (the entry script is args[0]). Node flags like
+   * --import must come BEFORE the entry script, so prepend — never splice
+   * after argv[0] (that would hand `--import` to the runner as a script
+   * argument: "unknown argument: --import").
+   * @param argv - spawn args of the runner invocation.
+   * @returns the argv with this module preloaded.
+   */
+  function buildInjectedArgv(argv) {
+    return ['--import', selfSpecifier, ...argv]
+  }
+
+  /**
    * The windows-acl sandbox runner is spawned as `[process.execPath, runner]`.
    * Under the CLI, process.execPath is node.exe (a console app) which
    * inherits the terminal console, so the runner's restricted-token children
@@ -106,17 +138,13 @@ if (process.platform === 'win32') {
    * confined children then inherit.
    */
   const maybeInjectSelf = (argv) => {
-    if (!Array.isArray(argv)) return argv
-    if (argv.some((a) => typeof a === 'string' && a.includes('dsh-sandbox-windows-acl'))) {
-      debug('injecting self into sandbox runner')
-      // spawn(file, args): args are the arguments ONLY (the entry script is
-      // args[0]). Node flags like --import must come BEFORE the entry script,
-      // so prepend — never splice after argv[0] (that would hand `--import`
-      // to the runner as a script argument: "unknown argument: --import").
-      return ['--import', selfSpecifier, ...argv]
-    }
-    return argv
+    if (!isSandboxRunnerArgv(argv)) return argv
+    debug('injecting self into sandbox runner')
+    return buildInjectedArgv(argv)
   }
+
+  /** Test-only surface for the runner-injection shape spec (Windows CI). */
+  childProcess._dshInjectionHelpers = { isSandboxRunnerArgv, buildInjectedArgv }
 
   /** Default-inject windowsHide when there is no console to inherit. */
   const hide = (options) => {
