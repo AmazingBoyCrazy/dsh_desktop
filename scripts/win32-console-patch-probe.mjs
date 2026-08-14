@@ -14,10 +14,14 @@
 
 import { spawn } from 'node:child_process'
 import { createRequire } from 'node:module'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const require = createRequire(import.meta.url)
 const patchPath = fileURLToPath(new URL('../src/main/win32-child-process-patch.mjs', import.meta.url))
+// --import takes a specifier/URL; a raw Windows path would be read as the
+// `d:` URL scheme (ERR_UNSUPPORTED_ESM_URL_SCHEME), exactly what harness.mjs
+// must avoid — probe the same file:// form the desktop passes.
+const patchSpecifier = pathToFileURL(patchPath).href
 
 /** Inline engine-side script: asserts marker + live binding + spawn shapes. */
 const inline = `
@@ -55,7 +59,7 @@ if (binary !== process.execPath) {
 
 let stdout = ''
 let stderr = ''
-const child = spawn(binary, ['--import', patchPath, '--input-type=module', '-e', inline], {
+const child = spawn(binary, ['--import', patchSpecifier, '--input-type=module', '-e', inline], {
   env,
   windowsHide: true,
   stdio: ['ignore', 'pipe', 'pipe'],

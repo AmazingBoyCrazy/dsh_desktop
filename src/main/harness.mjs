@@ -212,7 +212,10 @@ export class HarnessServer {
     // `windowsHide: true` on all child_process entry points; harmless no-op
     // on POSIX, so it is only passed on win32.
     if (process.platform === 'win32') {
-      nodeArgs.push('--import', WIN32_CHILD_PROCESS_PATCH_PATH)
+      // --import takes a specifier/URL, not a raw Windows path: a bare
+      // `D:\...` is parsed as the URL scheme `d:` and the engine dies with
+      // ERR_UNSUPPORTED_ESM_URL_SCHEME. Always pass the file:// form.
+      nodeArgs.push('--import', pathToFileURL(WIN32_CHILD_PROCESS_PATCH_PATH).href)
     }
     nodeArgs.push(entry, ...args)
     const env = { ...process.env, [NODE_MODE_ENV]: '1' }
