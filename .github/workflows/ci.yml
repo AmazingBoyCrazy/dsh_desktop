@@ -56,3 +56,39 @@ jobs:
           cp -r dist/linux-unpacked/resources/app "$ISODIR/app"
           node scripts/smoke-dsh-web.mjs --entry "$ISODIR/app/node_modules/@deepseek-ai/dsh/lib/bin.js"
         timeout-minutes: 15
+
+  # Windows is the primary distribution target, and its native paths are the
+  # least covered by upstream CI: this job proves the engine boots under
+  # Electron's Node on Windows (koffi, node-pty and the desktop picker plugin
+  # all load at boot) and that the app quits cleanly. Windows runners have an
+  # interactive session, so no xvfb equivalent is needed.
+  windows:
+    name: Windows engine + desktop smoke
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Syntax check
+        shell: pwsh
+        run: |
+          Get-ChildItem src/main/*.mjs, src/preload/*.mjs, scripts/*.mjs | ForEach-Object { node --check $_.FullName }
+
+      - name: Engine smoke — boots the embedded dsh web profile
+        run: npm run smoke
+
+      - name: Desktop smoke — Electron boots the engine for real (windows)
+        env:
+          DSH_DESKTOP_SMOKE: '1'
+          DSH_HOME: ${{ runner.temp }}\dsh-desktop-smoke-home
+          DSH_TELEMETRY_DISABLED: '1'
+        run: npx electron .
+        timeout-minutes: 8

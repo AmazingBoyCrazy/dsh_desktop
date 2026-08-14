@@ -1,8 +1,10 @@
 # DeepSeek Harness Desktop
 
-[![CI](https://github.com/hongfeiyucode/deepseek-harness-desktop/actions/workflows/ci.yml/badge.svg)](https://github.com/hongfeiyucode/deepseek-harness-desktop/actions/workflows/ci.yml)
-[![GitHub release](https://img.shields.io/github/v/release/hongfeiyucode/deepseek-harness-desktop?include_prereleases&label=release)](https://github.com/hongfeiyucode/deepseek-harness-desktop/releases)
+[![CI](https://github.com/AmazingBoyCrazy/dsh_desktop/actions/workflows/ci.yml/badge.svg)](https://github.com/AmazingBoyCrazy/dsh_desktop/actions/workflows/ci.yml)
+[![GitHub release](https://img.shields.io/github/v/release/AmazingBoyCrazy/dsh_desktop?include_prereleases&label=release)](https://github.com/AmazingBoyCrazy/dsh_desktop/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+> Fork note：本仓库是 [deepseek-harness-desktop](https://github.com/hongfeiyucode/deepseek-harness-desktop) 的维护分支（MIT），上游代码与署名保持不变；改动点：修复应用内自动更新的产物文件名问题、补 Windows CI 冒烟测试、显式声明目录选择器依赖。
 
 **DeepSeek Harness Desktop** 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的桌面客户端：不需要终端、不需要安装 Node.js、也不需要 `dsh web` 命令。双击图标，完整的 DeepSeek Harness 网页版界面就会在自己的窗口里打开。
 
@@ -52,7 +54,7 @@ flowchart LR
 
 ## 启动方法
 
-从 [Releases](https://github.com/hongfeiyucode/deepseek-harness-desktop/releases) 下载对应平台的安装包：
+从 [Releases](https://github.com/AmazingBoyCrazy/dsh_desktop/releases) 下载对应平台的安装包：
 
 | 平台 | 安装包 | 说明 |
 | --- | --- | --- |
@@ -68,7 +70,7 @@ flowchart LR
 需要 Node.js ≥ 22.12：
 
 ```sh
-git clone https://github.com/hongfeiyucode/deepseek-harness-desktop.git
+git clone https://github.com/AmazingBoyCrazy/dsh_desktop.git
 cd deepseek-harness-desktop
 npm install
 npm start          # 启动应用（Electron + 内嵌引擎）
@@ -130,7 +132,7 @@ flowchart LR
     curl -X POST \
       -H "Authorization: token ${{ secrets.DESKTOP_REPO_PAT }}" \
       -H "Accept: application/vnd.github.everest-preview+json" \
-      https://api.github.com/repos/hongfeiyucode/deepseek-harness-desktop/dispatches \
+      https://api.github.com/repos/AmazingBoyCrazy/dsh_desktop/dispatches \
       -d '{"event_type": "upstream-published"}'
 ```
 

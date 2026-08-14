@@ -8,10 +8,10 @@
     "name": "hongfeiyucode",
     "email": "hongfeiyucode@users.noreply.github.com"
   },
-  "homepage": "https://github.com/hongfeiyucode/deepseek-harness-desktop",
+  "homepage": "https://github.com/AmazingBoyCrazy/dsh_desktop",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hongfeiyucode/deepseek-harness-desktop.git"
+    "url": "git+https://github.com/AmazingBoyCrazy/dsh_desktop.git"
   },
   "private": true,
   "type": "module",
@@ -32,6 +32,7 @@
   },
   "dependencies": {
     "@deepseek-ai/dsh": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-host-directory-picker": "^0.1.0-rc.6",
     "electron-updater": "6.8.9",
     "@deepseek-ai/cordis-plugin-group": "^1.0.1",
     "@deepseek-ai/dsh-anonymous-user-id": "^0.1.0-rc.6",
@@ -59,14 +60,15 @@
     "semver": "7.8.5"
   },
   "build": {
-    "appId": "io.github.hongfeiyucode.deepseek-harness-desktop",
+    "appId": "io.github.amazingboycrazy.dsh-desktop",
     "productName": "DeepSeek Harness Desktop",
     "asar": false,
     "npmRebuild": false,
+    "artifactName": "${name}-${version}-${arch}.${ext}",
     "publish": {
       "provider": "github",
-      "owner": "hongfeiyucode",
-      "repo": "deepseek-harness-desktop"
+      "owner": "AmazingBoyCrazy",
+      "repo": "dsh_desktop"
     },
     "directories": {
       "buildResources": "build",
