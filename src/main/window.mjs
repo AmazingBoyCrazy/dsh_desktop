@@ -39,6 +39,9 @@ export function createMainWindow() {
     autoHideMenuBar: true,
     backgroundColor: '#10141a',
     title: 'DeepSeek Harness Desktop',
+    // Window/taskbar icon (Windows & Linux; macOS uses the bundle icon).
+    // Shipped inside src/ so it exists in dev AND packaged builds.
+    icon: join(__dirname, '../assets/icon.png'),
     webPreferences: {
       preload: PRELOAD_PATH,
       contextIsolation: true,
