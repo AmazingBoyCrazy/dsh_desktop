@@ -221,6 +221,24 @@ export class HarnessServer {
     const env = { ...process.env, [NODE_MODE_ENV]: '1' }
     // Keep the child windowless on Windows; ELECTRON_RUN_AS_NODE ignores it elsewhere.
     env.ELECTRON_NO_ATTACH_CONSOLE = '1'
+    // Windows ACL-sandbox fix: its pre-execution check requires the temp root
+    // to be OUTSIDE the session workspace (the user's home), but os.tmpdir()
+    // defaults under %LOCALAPPDATA% — inside the home — so every sandboxed
+    // command would fail before running. Redirect TMP/TEMP to a writable,
+    // workspace-external directory (C:\Users\Public by convention) and
+    // pre-create it.
+    if (process.platform === 'win32') {
+      const publicDir = process.env.PUBLIC ?? join('C:\\', 'Users', 'Public')
+      const sandboxTemp = join(publicDir, 'dsh-desktop-tmp')
+      try {
+        mkdirSync(sandboxTemp, { recursive: true })
+        env.TMP = sandboxTemp
+        env.TEMP = sandboxTemp
+      } catch {
+        // Unwritable Public (unusual): keep the default temp — sandboxed
+        // commands stay unavailable, everything else is unaffected.
+      }
+    }
     mkdirSync(this.logDir, { recursive: true })
     const logFile = this.logPath
     if (existsSync(logFile)) {

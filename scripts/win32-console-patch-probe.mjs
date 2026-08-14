@@ -30,6 +30,7 @@ import { createRequire } from 'node:module'
 const cp = createRequire(import.meta.url)('node:child_process')
 if (cp._dshWin32ConsolePatch !== true) { console.error('FAIL: patch marker missing'); process.exit(1) }
 if (spawn !== cp.spawn) { console.error('FAIL: ESM import is not the patched spawn (live binding broken)'); process.exit(1) }
+if (cp._dshWin32HiddenConsole !== true) { console.error('FAIL: hidden console not allocated'); process.exit(1) }
 const shapes = [
   () => new Promise((res) => { const c = spawn(process.execPath, ['-e', '1'], { stdio: 'ignore' }); c.on('exit', (code) => res(code === 0)) }),
   () => new Promise((res) => { const c = spawn(process.execPath, { stdio: 'ignore' }); c.on('exit', (code) => res(code === 0)) }),
