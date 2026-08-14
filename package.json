@@ -1,7 +1,7 @@
 {
   "name": "deepseek-harness-desktop",
   "productName": "DeepSeek Harness Desktop",
-  "version": "0.1.0-rc.6.1",
+  "version": "0.1.0-rc.6.2",
   "description": "Desktop client for DeepSeek Harness: double-click to launch, the official web GUI runs self-hosted from the embedded @deepseek-ai/dsh engine. No terminal, no Node.js required.",
   "license": "MIT",
   "author": {

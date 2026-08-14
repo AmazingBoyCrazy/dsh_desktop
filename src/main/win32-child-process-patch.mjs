@@ -45,7 +45,6 @@
  */
 
 import { createRequire } from 'node:module'
-import { pathToFileURL } from 'node:url'
 
 const require = createRequire(import.meta.url)
 const childProcess = require('node:child_process')
@@ -56,6 +55,11 @@ if (process.platform === 'win32') {
 
   /** Whether this process has a console children can inherit. */
   childProcess._dshEngineHasConsole = false
+
+  /** Opt-in diagnostics (DSH_DESKTOP_PATCH_DEBUG=1) for future debugging. */
+  const debug = process.env.DSH_DESKTOP_PATCH_DEBUG === '1'
+    ? (...args) => { console.error('[dsh-desktop-patch]', ...args) }
+    : () => {}
 
   /** Give this console-less process a hidden console (best effort). */
   function allocateHiddenConsole() {
@@ -75,12 +79,11 @@ if (process.platform === 'win32') {
         childProcess._dshWin32HiddenConsole = true
       }
       childProcess._dshEngineHasConsole = Boolean(getConsoleWindow())
-      // Diagnostic: lands in the engine log (dsh-web.log) via stderr.
-      console.error(`[dsh-desktop-patch] allocConsole=${allocResult} hasConsole=${childProcess._dshEngineHasConsole} hidden=${childProcess._dshWin32HiddenConsole === true}`)
+      debug('allocConsole=', allocResult, 'hasConsole=', childProcess._dshEngineHasConsole, 'hidden=', childProcess._dshWin32HiddenConsole === true)
     } catch (error) {
       // koffi unavailable or API failure: degrade to the child_process patch
       // alone (windowsHide still covers the plain subprocess paths).
-      console.error(`[dsh-desktop-patch] hidden console failed: ${String(error)}`)
+      debug('hidden console failed:', String(error))
     }
   }
   allocateHiddenConsole()
@@ -105,8 +108,12 @@ if (process.platform === 'win32') {
   const maybeInjectSelf = (argv) => {
     if (!Array.isArray(argv)) return argv
     if (argv.some((a) => typeof a === 'string' && a.includes('dsh-sandbox-windows-acl'))) {
-      console.error('[dsh-desktop-patch] injecting self into sandbox runner')
-      return [argv[0], '--import', selfSpecifier, ...argv.slice(1)]
+      debug('injecting self into sandbox runner')
+      // spawn(file, args): args are the arguments ONLY (the entry script is
+      // args[0]). Node flags like --import must come BEFORE the entry script,
+      // so prepend — never splice after argv[0] (that would hand `--import`
+      // to the runner as a script argument: "unknown argument: --import").
+      return ['--import', selfSpecifier, ...argv]
     }
     return argv
   }
@@ -120,15 +127,6 @@ if (process.platform === 'win32') {
     return options
   }
 
-  /** Diagnostic: log every spawn the engine performs (lands in dsh-web.log). */
-  const logSpawn = (name, file) => {
-    try {
-      console.error(`[dsh-desktop-patch] spawn ${name}: ${typeof file === 'string' ? file : String(file)}`)
-    } catch {
-      // Logging must never break a spawn.
-    }
-  }
-
   /**
    * Patch one spawn-shaped API: `(file[, args][, options])` / fork-shaped
    * `(modulePath[, args][, options])`. The `spawn(file, options)` short form
@@ -138,7 +136,6 @@ if (process.platform === 'win32') {
     const original = childProcess[name]
     if (typeof original !== 'function') return
     childProcess[name] = function (file, args, options) {
-      logSpawn(name, file)
       if (Array.isArray(args)) {
         return original.call(this, file, maybeInjectSelf(args), hide(options))
       }
@@ -159,7 +156,6 @@ if (process.platform === 'win32') {
     const original = childProcess[name]
     if (typeof original !== 'function') return
     childProcess[name] = function (command, arg2, arg3, arg4) {
-      logSpawn(name, command)
       if (hasArgvArray && Array.isArray(arg2)) {
         return original.call(this, command, arg2, hide(arg3), arg4)
       }
