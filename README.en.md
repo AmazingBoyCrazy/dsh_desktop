@@ -19,6 +19,7 @@
 4. **Added Windows CI**: engine smoke, real Electron desktop smoke, console-patch probe, and runner-injection shape tests all run on Windows runners (the original shell had Linux CI only).
 5. **Explicit dependency**: the patch's `@deepseek-ai/dsh-host-directory-picker` dependency is declared directly instead of relying on npm hoisting.
 6. **Whale icon**: the window/taskbar/dock icon is now the official DeepSeek Harness whale logo.
+7. **Bundled enhancement plugins** (all MIT): `dsh-better-sidebar` (right sidebar + bottom panel workbench), `dsh-skill-viewer` (skill management), and `dshmarket` (visual plugin marketplace). On first boot the app seeds them into `~/.dsh/profiles/web/cordis.patch.yml` (only when that file does not exist; existing configurations are untouched and can remove or disable them freely).
 
 ## How it works
 

@@ -37,6 +37,48 @@ export const DESKTOP_PICKER_PLUGIN_PATH = fileURLToPath(new URL('../assets/plugi
 export const WIN32_CHILD_PROCESS_PATCH_PATH = fileURLToPath(new URL('./win32-child-process-patch.mjs', import.meta.url))
 
 /**
+ * Default user patch layer seeded into a FRESH web profile on first boot.
+ * Ships the bundled third-party plugins (all MIT) so new installs get them
+ * out of the box; an existing `cordis.patch.yml` is never touched, so
+ * upgrades and users who manage their own layers are unaffected (the loader
+ * throws on duplicate entry ids, which is exactly why the app must not
+ * inject these rows through the runtime overlay).
+ */
+export const DEFAULT_PROFILE_SEED = `# DeepSeek Harness Desktop default plugin layer (created on first boot).
+# The desktop app writes this file only when it is missing; edit freely.
+- insert:
+    - id: better-sidebar
+      name: 'dsh-better-sidebar'
+    - id: skills-viewer
+      name: 'dsh-skill-viewer'
+    - id: dsh-market
+      name: 'dshmarket'
+`
+
+/** Absolute path of the web profile's user patch file under one DSH_HOME. */
+export function profilePatchPath(dshHome) {
+  return join(dshHome, 'profiles', 'web', 'cordis.patch.yml')
+}
+
+/**
+ * Seed the default plugin layer on first boot (fresh installs only).
+ * Idempotent and best-effort: a missing profile directory is created; an
+ * existing patch file is left alone; any failure just skips the seed.
+ */
+export function ensureDefaultProfileSeed() {
+  const dshHome = process.env.DSH_HOME ?? join(homedir(), '.dsh')
+  const patchPath = profilePatchPath(dshHome)
+  try {
+    if (existsSync(patchPath)) return
+    mkdirSync(dirname(patchPath), { recursive: true })
+    writeFileSync(patchPath, DEFAULT_PROFILE_SEED)
+  } catch {
+    // Best effort: a fresh install without the seed still boots (plugins
+    // simply do not mount); never break startup over a seed write.
+  }
+}
+
+/**
  * Write the runtime composition overlay the engine boots with: it disables
  * the upstream directory-picker-auto row and inserts the desktop backend
  * (referenced as a file:// URL, so it works wherever the app is installed)
@@ -190,6 +232,10 @@ export class HarnessServer {
    */
   start() {
     if (this.running) throw new Error('harness engine already running')
+    // Fresh installs get the bundled plugins through the profile seed; the
+    // engine's own init never overwrites an existing cordis.patch.yml, so
+    // this is safe to run before the first boot.
+    ensureDefaultProfileSeed()
     const entry = resolveDshEntry()
     // The overlay lives in userData (one level above the logs dir) because it
     // embeds the absolute plugin path, which differs per installation.

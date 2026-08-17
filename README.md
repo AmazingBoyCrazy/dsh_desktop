@@ -19,6 +19,7 @@
 4. **新增 Windows CI**：引擎冒烟、真实 Electron 桌面冒烟、控制台补丁探针、runner 注入形状测试，全部在 Windows runner 上执行（原始壳仅 Linux CI）。
 5. **依赖显式化**：补丁依赖的 `@deepseek-ai/dsh-host-directory-picker` 显式声明，不再依赖 npm 提升（hoisting）。
 6. **鲸鱼图标**：窗口/任务栏/dock 图标替换为 DeepSeek Harness 官方鲸鱼 Logo。
+7. **内置增强插件**（均 MIT）：`dsh-better-sidebar`（右侧栏 + 底部面板工作台）、`dsh-skill-viewer`（技能管理）、`dshmarket`（可视化插件市场）。首次启动时自动写入 `~/.dsh/profiles/web/cordis.patch.yml`（仅当该文件不存在时；已有配置的用户不受影响，可自行删除/禁用）。
 
 ## 工作原理
 
