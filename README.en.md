@@ -52,6 +52,20 @@ Download the installer for your platform from [Releases](https://github.com/Amaz
 | `DSH_DESKTOP_PORT` | `32123,32124,32125` | loopback port candidates (comma-separated) |
 | `DSH_DESKTOP_PATCH_DEBUG` | unset | `1` logs console-patch diagnostics to the engine log |
 
+## Bundled plugins
+
+The installers ship three enhancement plugins (all MIT), mounted on first boot into `~/.dsh/profiles/web/cordis.patch.yml` (written only when that file does not exist; existing configurations are untouched):
+
+| Plugin | Version | What it does | Upstream |
+| --- | --- | --- | --- |
+| `dsh-better-sidebar` | 0.12.x | Right sidebar + bottom panel workbench (resource manager / editor / terminal / Git / browser) | [omdsh-dev/DSH-better-sidebar](https://github.com/omdsh-dev/DSH-better-sidebar) |
+| `dsh-skill-viewer` | 0.7.0 | Skill management (card list / enable-disable / delete / add / move / group) | [Fishquito7/dsh-skill-viewer](https://github.com/Fishquito7/dsh-skill-viewer) |
+| `dshmarket` | 1.11.x | Visual plugin marketplace (browse / search / one-click install / backup / update) | [dsh-market/dsh-market](https://github.com/dsh-market/dsh-market) |
+
+- To disable: edit `~/.dsh/profiles/web/cordis.patch.yml` and remove the row or add `disabled: true` (hot-reloads immediately, no restart needed).
+- To uninstall: `cd ~/.dsh/profiles/web && pnpm remove <package>`.
+- Plugin versions are pinned by the lockfile at release time; update them before the next release if needed.
+
 ## Development
 
 Node.js ≥ 22.12 required:

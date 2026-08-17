@@ -53,6 +53,20 @@
 | `DSH_DESKTOP_PORT` | `32123,32124,32125` | 引擎回环端口候选（逗号分隔） |
 | `DSH_DESKTOP_PATCH_DEBUG` | 未设置 | `1` 时输出控制台补丁诊断日志到引擎日志 |
 
+## 内置插件
+
+安装包随附三个增强插件（均为 MIT 许可），首次启动自动挂载到 `~/.dsh/profiles/web/cordis.patch.yml`（仅当该文件不存在时写入；已有配置不受影响）：
+
+| 插件 | 版本 | 功能 | 上游 |
+| --- | --- | --- | --- |
+| `dsh-better-sidebar` | 0.12.x | 右侧栏 + 底部面板工作台（资源管理器 / 编辑器 / 终端 / Git / 浏览器） | [omdsh-dev/DSH-better-sidebar](https://github.com/omdsh-dev/DSH-better-sidebar) |
+| `dsh-skill-viewer` | 0.7.0 | 技能管理（卡片列表 / 启停 / 删除 / 添加 / 移动 / 分组） | [Fishquito7/dsh-skill-viewer](https://github.com/Fishquito7/dsh-skill-viewer) |
+| `dshmarket` | 1.11.x | 可视化插件市场（浏览 / 搜索 / 一键安装 / 备份 / 更新） | [dsh-market/dsh-market](https://github.com/dsh-market/dsh-market) |
+
+- 不需要时：编辑 `~/.dsh/profiles/web/cordis.patch.yml`，删除对应行或给行加 `disabled: true`（热重载即时生效，无需重启）。
+- 想彻底卸载：`cd ~/.dsh/profiles/web && pnpm remove <包名>`。
+- 上述插件版本随发版固定（lockfile 锁定），需要升级时在下一版发布前手动更新。
+
 ## 从源码开发
 
 需要 Node.js ≥ 22.12：

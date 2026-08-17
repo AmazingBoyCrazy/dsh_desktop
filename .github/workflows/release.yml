@@ -185,7 +185,23 @@ jobs:
           prerelease: ${{ contains(needs.plan.outputs.version, '-') }}
           generate_release_notes: true
           body: |
-            Embedded engine: [@deepseek-ai/dsh v${{ needs.plan.outputs.upstream }}](https://www.npmjs.com/package/@deepseek-ai/dsh/v/${{ needs.plan.outputs.upstream }})
+            **Embedded engine:** [@deepseek-ai/dsh v${{ needs.plan.outputs.upstream }}](https://www.npmjs.com/package/@deepseek-ai/dsh/v/${{ needs.plan.outputs.upstream }})
+
+            ## What's included
+
+            - **Bundled plugins** (MIT, mounted on first boot):
+              - `dsh-better-sidebar` — right sidebar + bottom panel workbench (resources / editor / terminal / Git / browser)
+              - `dsh-skill-viewer` — skill management (cards / enable-disable / add / remove / group)
+              - `dshmarket` — visual plugin marketplace (browse / one-click install / backup / update)
+            - **Windows console fix** — hidden-console scheme (engine + sandbox runner share one hidden console): no terminal windows flash on command execution, including sandboxed commands
+            - **Windows sandbox fix** — engine TMP/TEMP redirected outside the workspace so ACL-sandboxed commands run
+            - **Auto-update fix** — update metadata now matches published artifacts (was 404)
+            - **Windows CI** — engine smoke, real Electron smoke, console-patch probe, runner-injection shape tests
+
+            ## Notes
+
+            - Unsigned builds: SmartScreen → *More info → Run anyway*; macOS first launch → right-click *Open*.
+            - Data lives in `~/.dsh` (shared with the CLI / web GUI). Run only one engine at a time.
 
             Upstream project: https://github.com/deepseek-ai/deepseek-harness
           files: artifacts/**
