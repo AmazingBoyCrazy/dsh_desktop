@@ -49,14 +49,14 @@ export const DEFAULT_PROFILE_SEED = `# DeepSeek Harness Desktop default plugin l
 - insert:
     - id: better-sidebar
       name: 'dsh-better-sidebar'
-    - id: skills-viewer
-      name: 'dsh-skill-viewer'
+    - id: skill-mcp-panel
+      name: 'dsh-skill-mcp-panel'
     - id: dsh-market
       name: 'dshmarket'
 `
 
 /** Bundled third-party plugins (must match the seed rows and package.json). */
-const BUNDLED_PLUGINS = ['dsh-better-sidebar', 'dsh-skill-viewer', 'dshmarket']
+const BUNDLED_PLUGINS = ['dsh-better-sidebar', 'dsh-skill-mcp-panel', 'dshmarket']
 
 /** Absolute path of the web profile's user patch file under one DSH_HOME. */
 export function profilePatchPath(dshHome) {

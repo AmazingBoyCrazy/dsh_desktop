@@ -19,7 +19,7 @@
 4. **Added Windows CI**: engine smoke, real Electron desktop smoke, console-patch probe, and runner-injection shape tests all run on Windows runners (the original shell had Linux CI only).
 5. **Explicit dependency**: the patch's `@deepseek-ai/dsh-host-directory-picker` dependency is declared directly instead of relying on npm hoisting.
 6. **Whale icon**: the window/taskbar/dock icon is now the official DeepSeek Harness whale logo.
-7. **Bundled enhancement plugins** (all MIT): `dsh-better-sidebar` (right sidebar + bottom panel workbench), `dsh-skill-viewer` (skill management), and `dshmarket` (visual plugin marketplace). On first boot the app seeds them into `~/.dsh/profiles/web/cordis.patch.yml` (only when that file does not exist; existing configurations are untouched and can remove or disable them freely).
+7. **Bundled enhancement plugins** (all MIT): `dsh-better-sidebar` (right sidebar + bottom panel workbench), `dsh-skill-mcp-panel` (skill management), and `dshmarket` (visual plugin marketplace). On first boot the app seeds them into `~/.dsh/profiles/web/cordis.patch.yml` (only when that file does not exist; existing configurations are untouched and can remove or disable them freely).
 
 ## How it works
 
@@ -59,7 +59,7 @@ The installers ship three enhancement plugins (all MIT), mounted on first boot i
 | Plugin | Version | What it does | Upstream |
 | --- | --- | --- | --- |
 | `dsh-better-sidebar` | 0.12.x | Right sidebar + bottom panel workbench (resource manager / editor / terminal / Git / browser) | [omdsh-dev/DSH-better-sidebar](https://github.com/omdsh-dev/DSH-better-sidebar) |
-| `dsh-skill-viewer` | 0.7.0 | Skill management (card list / enable-disable / delete / add / move / group) | [Fishquito7/dsh-skill-viewer](https://github.com/Fishquito7/dsh-skill-viewer) |
+| `dsh-skill-mcp-panel` | 2.0.x | Skill + MCP management panel (card list / enable-disable / delete / add / group; MCP server management) | [Fishquito7/dsh-skill-mcp-panel](https://github.com/Fishquito7/dsh-skill-mcp-panel) |
 | `dshmarket` | 1.11.x | Visual plugin marketplace (browse / search / one-click install / backup / update) | [dsh-market/dsh-market](https://github.com/dsh-market/dsh-market) |
 
 - To disable: edit `~/.dsh/profiles/web/cordis.patch.yml` and remove the row or add `disabled: true` (hot-reloads immediately, no restart needed).

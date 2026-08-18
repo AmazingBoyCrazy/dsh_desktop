@@ -19,7 +19,7 @@
 4. **新增 Windows CI**：引擎冒烟、真实 Electron 桌面冒烟、控制台补丁探针、runner 注入形状测试，全部在 Windows runner 上执行（原始壳仅 Linux CI）。
 5. **依赖显式化**：补丁依赖的 `@deepseek-ai/dsh-host-directory-picker` 显式声明，不再依赖 npm 提升（hoisting）。
 6. **鲸鱼图标**：窗口/任务栏/dock 图标替换为 DeepSeek Harness 官方鲸鱼 Logo。
-7. **内置增强插件**（均 MIT）：`dsh-better-sidebar`（右侧栏 + 底部面板工作台）、`dsh-skill-viewer`（技能管理）、`dshmarket`（可视化插件市场）。首次启动时自动写入 `~/.dsh/profiles/web/cordis.patch.yml`（仅当该文件不存在时；已有配置的用户不受影响，可自行删除/禁用）。
+7. **内置增强插件**（均 MIT）：`dsh-better-sidebar`（右侧栏 + 底部面板工作台）、`dsh-skill-mcp-panel`（技能 + MCP 管理）、`dshmarket`（可视化插件市场）。首次启动时自动写入 `~/.dsh/profiles/web/cordis.patch.yml`（仅当该文件不存在时；已有配置的用户不受影响，可自行删除/禁用）。
 
 ## 工作原理
 
@@ -59,9 +59,9 @@
 
 | 插件 | 版本 | 功能 | 上游 |
 | --- | --- | --- | --- |
-| `dsh-better-sidebar` | 0.12.x | 右侧栏 + 底部面板工作台（资源管理器 / 编辑器 / 终端 / Git / 浏览器） | [omdsh-dev/DSH-better-sidebar](https://github.com/omdsh-dev/DSH-better-sidebar) |
-| `dsh-skill-viewer` | 0.7.0 | 技能管理（卡片列表 / 启停 / 删除 / 添加 / 移动 / 分组） | [Fishquito7/dsh-skill-viewer](https://github.com/Fishquito7/dsh-skill-viewer) |
-| `dshmarket` | 1.11.x | 可视化插件市场（浏览 / 搜索 / 一键安装 / 备份 / 更新） | [dsh-market/dsh-market](https://github.com/dsh-market/dsh-market) |
+| `dsh-better-sidebar` | 0.13.x | 右侧栏 + 底部面板工作台（资源管理器 / 编辑器 / 终端 / Git / 浏览器） | [omdsh-dev/DSH-better-sidebar](https://github.com/omdsh-dev/DSH-better-sidebar) |
+| `dsh-skill-mcp-panel` | 2.0.x | 技能 + MCP 管理面板（卡片列表 / 启停 / 删除 / 添加 / 分组；MCP 服务器管理） | [Fishquito7/dsh-skill-mcp-panel](https://github.com/Fishquito7/dsh-skill-mcp-panel) |
+| `dshmarket` | 1.12.x | 可视化插件市场（浏览 / 搜索 / 一键安装 / 备份 / 更新） | [dsh-market/dsh-market](https://github.com/dsh-market/dsh-market) |
 
 - 不需要时：编辑 `~/.dsh/profiles/web/cordis.patch.yml`，删除对应行或给行加 `disabled: true`（热重载即时生效，无需重启）。
 - 想彻底卸载：`cd ~/.dsh/profiles/web && pnpm remove <包名>`。
