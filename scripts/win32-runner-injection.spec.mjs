@@ -66,17 +66,20 @@ check('original argv preserved after the specifier',
   JSON.stringify(injected.slice(2)) === JSON.stringify(argv))
 
 // — real spawn semantics: Node must consume --import, entry keeps its args —
+// NOTE: with `-e`, a leading `--workspace` would be parsed as a Node CLI
+// option ("bad option", exit 9), so the `--` separator separates script args.
 await new Promise((resolve) => {
   const script = 'console.log(JSON.stringify(process.argv.slice(1)))'
-  const child = spawn(process.execPath, buildInjectedArgv(['-e', script, '--workspace', 'W', '--mode', 'read-only']), {
+  const child = spawn(process.execPath, buildInjectedArgv(['-e', script, '--', '--workspace', 'W', '--mode', 'read-only']), {
     stdio: ['ignore', 'pipe', 'pipe'],
   })
   let out = ''
   child.stdout.setEncoding('utf8').on('data', (d) => { out += d })
   child.stderr.setEncoding('utf8').on('data', (d) => { out += d })
   child.on('exit', (code) => {
-    check(`injected argv spawns with correct semantics (exit ${code})`,
-      code === 0 && out.includes('"--workspace"') && out.includes('"W"'))
+    const ok = code === 0 && out.includes('"--workspace"') && out.includes('"W"')
+    if (!ok) console.error('injected spawn output:', JSON.stringify(out))
+    check(`injected argv spawns with correct semantics (exit ${code})`, ok)
     resolve()
   })
 })

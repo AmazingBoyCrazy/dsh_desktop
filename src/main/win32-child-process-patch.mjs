@@ -122,18 +122,17 @@ if (process.platform === 'win32') {
    * sandbox runner invocation. Matches both the package path (current
    * upstream layout) and a structural fallback (a node entry named
    * runner.js/runner.ts carrying the runner's flag vocabulary), so the
-   * injection survives upstream renames or relocations.
-   * @param argv - spawn args (args[0] is the entry script).
+   * injection survives upstream renames or relocations. The runner entry may
+   * not be argv[0]: the dev invocation prepends `--import tsx/esm`.
+   * @param argv - spawn args (args[0] is normally the entry script).
    */
   function isSandboxRunnerArgv(argv) {
     if (!Array.isArray(argv) || argv.length === 0) return false
-    const [entry, ...rest] = argv
-    if (typeof entry !== 'string' || entry === '') return false
-    if (entry.includes('dsh-sandbox-windows-acl')) return true
-    if (/[\\/]runner\.(js|ts)$/u.test(entry)) {
-      return rest.some((a) => a === '--mode' || a === '--temp' || a === '--workspace')
-    }
-    return false
+    const strings = argv.filter((a) => typeof a === 'string')
+    if (strings.some((a) => a.includes('dsh-sandbox-windows-acl'))) return true
+    const hasRunnerEntry = strings.some((a) => /[\\/]runner\.(js|ts)$/u.test(a))
+    const hasRunnerFlags = strings.some((a) => a === '--mode' || a === '--temp' || a === '--workspace')
+    return hasRunnerEntry && hasRunnerFlags
   }
 
   /**
