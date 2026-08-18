@@ -82,8 +82,15 @@ if (process.platform === 'win32') {
       const getConsoleWindow = kernel32.func('void* GetConsoleWindow(void)')
       const showWindow = user32.func('bool ShowWindow(void*, int)')
       const ATTACH_PARENT_PROCESS = 0xFFFFFFFF // (DWORD)-1
+      let parentAttached = false
       if (!getConsoleWindow()) {
-        if (!attachConsole(ATTACH_PARENT_PROCESS)) {
+        // Prefer attaching to the parent's console (the runner's case). The
+        // attach can SUCCEED while GetConsoleWindow() still returns NULL when
+        // the parent's console is a ConPTY pseudoconsole (CI hosts), so the
+        // "has a console" fact must come from the AttachConsole result, not
+        // from the window handle.
+        parentAttached = attachConsole(ATTACH_PARENT_PROCESS)
+        if (!parentAttached) {
           // No console-bearing parent (the engine itself): allocate one and
           // hide it. FALSE when a console already exists (then children
           // inherit it — fine).
@@ -94,8 +101,8 @@ if (process.platform === 'win32') {
           }
         }
       }
-      childProcess._dshEngineHasConsole = Boolean(getConsoleWindow())
-      debug('hasConsole=', childProcess._dshEngineHasConsole, 'hidden=', childProcess._dshWin32HiddenConsole === true, 'parentAttached=', !childProcess._dshWin32HiddenConsole && childProcess._dshEngineHasConsole)
+      childProcess._dshEngineHasConsole = Boolean(getConsoleWindow()) || parentAttached
+      debug('hasConsole=', childProcess._dshEngineHasConsole, 'hidden=', childProcess._dshWin32HiddenConsole === true, 'parentAttached=', parentAttached)
     } catch (error) {
       // koffi unavailable or API failure: degrade to the child_process patch
       // alone (windowsHide still covers the plain subprocess paths).

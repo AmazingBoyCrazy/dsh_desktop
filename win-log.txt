@@ -1,0 +1,174 @@
+﻿2026-08-18T01:36:22.2152690Z Current runner version: '2.336.0'
+2026-08-18T01:36:22.2183092Z ##[group]Runner Image Provisioner
+2026-08-18T01:36:22.2183946Z Hosted Compute Agent
+2026-08-18T01:36:22.2184503Z Version: 20260729.566
+2026-08-18T01:36:22.2185095Z Commit: cf7153fe6e25b664e8693c24944bf2b00355d109
+2026-08-18T01:36:22.2185764Z Build Date: 2026-07-29T19:17:02Z
+2026-08-18T01:36:22.2186417Z Worker ID: {28975eb1-cdfa-4ce3-aae1-7beb3502cc1f}
+2026-08-18T01:36:22.2187086Z Azure Region: northcentralus
+2026-08-18T01:36:22.2187628Z ##[endgroup]
+2026-08-18T01:36:22.2189215Z ##[group]Operating System
+2026-08-18T01:36:22.2189838Z Microsoft Windows Server 2025
+2026-08-18T01:36:22.2190791Z 10.0.26100
+2026-08-18T01:36:22.2191315Z Datacenter
+2026-08-18T01:36:22.2191790Z ##[endgroup]
+2026-08-18T01:36:22.2192301Z ##[group]Runner Image
+2026-08-18T01:36:22.2192853Z Image: windows-2025-vs2026
+2026-08-18T01:36:22.2193433Z Version: 20260810.198.2
+2026-08-18T01:36:22.2194998Z Included Software: https://github.com/actions/runner-images/blob/win25-vs2026/20260810.198/images/windows/Windows2025-VS2026-Readme.md
+2026-08-18T01:36:22.2196648Z Image Release: https://github.com/actions/runner-images/releases/tag/win25-vs2026%2F20260810.198
+2026-08-18T01:36:22.2197630Z ##[endgroup]
+2026-08-18T01:36:22.2198688Z ##[group]GITHUB_TOKEN Permissions
+2026-08-18T01:36:22.2200904Z Contents: read
+2026-08-18T01:36:22.2201511Z Metadata: read
+2026-08-18T01:36:22.2202061Z ##[endgroup]
+2026-08-18T01:36:22.2204770Z Secret source: Actions
+2026-08-18T01:36:22.2205851Z Prepare workflow directory
+2026-08-18T01:36:22.2660403Z Prepare all required actions
+2026-08-18T01:36:22.2733486Z Getting action download info
+2026-08-18T01:36:22.4754066Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-08-18T01:36:22.6080083Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-08-18T01:36:22.8986985Z Complete job name: Windows engine + desktop smoke
+2026-08-18T01:36:23.0496886Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-18T01:36:23.0507474Z ##[group]Run actions/checkout@v4
+2026-08-18T01:36:23.0508176Z with:
+2026-08-18T01:36:23.0508588Z   repository: AmazingBoyCrazy/dsh_desktop
+2026-08-18T01:36:23.0512619Z   token: ***
+2026-08-18T01:36:23.0513004Z   ssh-strict: true
+2026-08-18T01:36:23.0513389Z   ssh-user: git
+2026-08-18T01:36:23.0513777Z   persist-credentials: true
+2026-08-18T01:36:23.0514211Z   clean: true
+2026-08-18T01:36:23.0514608Z   sparse-checkout-cone-mode: true
+2026-08-18T01:36:23.0515070Z   fetch-depth: 1
+2026-08-18T01:36:23.0515449Z   fetch-tags: false
+2026-08-18T01:36:23.0515830Z   show-progress: true
+2026-08-18T01:36:23.0516224Z   lfs: false
+2026-08-18T01:36:23.0516623Z   submodules: false
+2026-08-18T01:36:23.0517035Z   set-safe-directory: true
+2026-08-18T01:36:23.0517910Z   allow-unsafe-pr-checkout: false
+2026-08-18T01:36:23.0518746Z ##[endgroup]
+2026-08-18T01:36:23.2028841Z Syncing repository: AmazingBoyCrazy/dsh_desktop
+2026-08-18T01:36:23.2030527Z ##[group]Getting Git version info
+2026-08-18T01:36:23.2031133Z Working directory is 'D:\a\dsh_desktop\dsh_desktop'
+2026-08-18T01:36:23.3166402Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-08-18T01:36:23.7201424Z git version 2.55.0.windows.3
+2026-08-18T01:36:23.7252142Z ##[endgroup]
+2026-08-18T01:36:23.7278126Z Temporarily overriding HOME='D:\a\_temp\d8579b24-1a00-49b7-ada0-0aa87be4bbca' before making global git config changes
+2026-08-18T01:36:23.7280687Z Adding repository directory to the temporary git global config as a safe directory
+2026-08-18T01:36:23.7291203Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\dsh_desktop\dsh_desktop
+2026-08-18T01:36:23.7964632Z Deleting the contents of 'D:\a\dsh_desktop\dsh_desktop'
+2026-08-18T01:36:23.7970904Z ##[group]Initializing the repository
+2026-08-18T01:36:23.7980054Z [command]"C:\Program Files\Git\bin\git.exe" init D:\a\dsh_desktop\dsh_desktop
+2026-08-18T01:36:23.8881702Z Initialized empty Git repository in D:/a/dsh_desktop/dsh_desktop/.git/
+2026-08-18T01:36:23.8925515Z [command]"C:\Program Files\Git\bin\git.exe" remote add origin https://github.com/AmazingBoyCrazy/dsh_desktop
+2026-08-18T01:36:23.9472853Z ##[endgroup]
+2026-08-18T01:36:23.9474048Z ##[group]Disabling automatic garbage collection
+2026-08-18T01:36:23.9481620Z [command]"C:\Program Files\Git\bin\git.exe" config --local gc.auto 0
+2026-08-18T01:36:23.9776910Z ##[endgroup]
+2026-08-18T01:36:23.9779072Z ##[group]Setting up auth
+2026-08-18T01:36:23.9790246Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-08-18T01:36:24.0085672Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-08-18T01:36:25.4876053Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-08-18T01:36:25.5197840Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-08-18T01:36:26.0376690Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-08-18T01:36:26.0670302Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-08-18T01:36:26.5845508Z [command]"C:\Program Files\Git\bin\git.exe" config --local http.https://github.com/.extraheader "AUTHORIZATION: basic ***"
+2026-08-18T01:36:26.6157676Z ##[endgroup]
+2026-08-18T01:36:26.6158584Z ##[group]Fetching the repository
+2026-08-18T01:36:26.6171872Z [command]"C:\Program Files\Git\bin\git.exe" -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +7389cc666104e72a4c0567c72cfed61181666d6f:refs/remotes/origin/main
+2026-08-18T01:36:27.7830473Z From https://github.com/AmazingBoyCrazy/dsh_desktop
+2026-08-18T01:36:27.7831416Z  * [new ref]         7389cc666104e72a4c0567c72cfed61181666d6f -> origin/main
+2026-08-18T01:36:27.7868826Z ##[endgroup]
+2026-08-18T01:36:27.7869224Z ##[group]Determining the checkout info
+2026-08-18T01:36:27.7872596Z ##[endgroup]
+2026-08-18T01:36:27.7887165Z [command]"C:\Program Files\Git\bin\git.exe" sparse-checkout disable
+2026-08-18T01:36:27.8358898Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset-all extensions.worktreeConfig
+2026-08-18T01:36:27.8672355Z ##[group]Checking out the ref
+2026-08-18T01:36:27.8681003Z [command]"C:\Program Files\Git\bin\git.exe" checkout --progress --force -B main refs/remotes/origin/main
+2026-08-18T01:36:27.9411369Z Switched to a new branch 'main'
+2026-08-18T01:36:27.9434530Z branch 'main' set up to track 'origin/main'.
+2026-08-18T01:36:27.9484869Z ##[endgroup]
+2026-08-18T01:36:27.9900579Z [command]"C:\Program Files\Git\bin\git.exe" log -1 --format=%H
+2026-08-18T01:36:28.0189924Z 7389cc666104e72a4c0567c72cfed61181666d6f
+2026-08-18T01:36:28.0674287Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-18T01:36:28.0676287Z ##[group]Run actions/setup-node@v4
+2026-08-18T01:36:28.0676528Z with:
+2026-08-18T01:36:28.0676703Z   node-version: 22
+2026-08-18T01:36:28.0676879Z   cache: npm
+2026-08-18T01:36:28.0677043Z   always-auth: false
+2026-08-18T01:36:28.0678061Z   check-latest: false
+2026-08-18T01:36:28.0680796Z   token: ***
+2026-08-18T01:36:28.0680979Z ##[endgroup]
+2026-08-18T01:36:28.2526869Z Found in cache @ C:\hostedtoolcache\windows\node\22.23.2\x64
+2026-08-18T01:36:28.2533458Z (node:4228) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-08-18T01:36:28.2534249Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-08-18T01:36:28.2536579Z ##[group]Environment details
+2026-08-18T01:36:33.4171825Z node: v22.23.2
+2026-08-18T01:36:33.4172075Z npm: 10.9.8
+2026-08-18T01:36:33.4172239Z yarn: 1.22.22
+2026-08-18T01:36:33.4173086Z ##[endgroup]
+2026-08-18T01:36:33.5135558Z [command]C:\Windows\system32\cmd.exe /D /S /C "C:\hostedtoolcache\windows\node\22.23.2\x64\npm.cmd config get cache"
+2026-08-18T01:36:34.0973779Z C:\npm\cache
+2026-08-18T01:36:34.4172132Z npm cache is not found
+2026-08-18T01:36:34.4511520Z ##[group]Run npm ci
+2026-08-18T01:36:34.4511922Z [36;1mnpm ci[0m
+2026-08-18T01:36:34.5168839Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-08-18T01:36:34.5169250Z ##[endgroup]
+2026-08-18T01:36:54.6419617Z npm warn deprecated rimraf@2.6.3: Rimraf versions prior to v4 are no longer supported
+2026-08-18T01:36:54.8056831Z npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+2026-08-18T01:36:54.9190304Z npm warn deprecated lodash.isequal@4.5.0: This package is deprecated. Use require('node:util').isDeepStrictEqual instead.
+2026-08-18T01:36:55.2517852Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-08-18T01:36:57.1942080Z npm warn deprecated boolean@3.2.0: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+2026-08-18T01:36:58.7183386Z npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+2026-08-18T01:37:19.8746661Z 
+2026-08-18T01:37:19.8748520Z > deepseek-harness-desktop@0.1.0-rc.6.4 postinstall
+2026-08-18T01:37:19.8750543Z > node scripts/ensure-electron.mjs
+2026-08-18T01:37:19.8750896Z 
+2026-08-18T01:37:19.9389578Z Downloading Electron binary...
+2026-08-18T01:37:23.2886709Z 
+2026-08-18T01:37:23.2887421Z added 829 packages, and audited 830 packages in 48s
+2026-08-18T01:37:23.2887834Z 
+2026-08-18T01:37:23.2888477Z 159 packages are looking for funding
+2026-08-18T01:37:23.2888971Z   run `npm fund` for details
+2026-08-18T01:37:23.2904442Z 
+2026-08-18T01:37:23.2905160Z found 0 vulnerabilities
+2026-08-18T01:37:25.3921221Z ##[group]Run Get-ChildItem src/main/*.mjs, src/preload/*.mjs, scripts/*.mjs | ForEach-Object { node --check $_.FullName }
+2026-08-18T01:37:25.3922154Z [36;1mGet-ChildItem src/main/*.mjs, src/preload/*.mjs, scripts/*.mjs | ForEach-Object { node --check $_.FullName }[0m
+2026-08-18T01:37:25.3993003Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-08-18T01:37:25.3993339Z ##[endgroup]
+2026-08-18T01:37:26.6503180Z ##[group]Run npm run smoke
+2026-08-18T01:37:26.6503498Z [36;1mnpm run smoke[0m
+2026-08-18T01:37:26.6570409Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-08-18T01:37:26.6570762Z ##[endgroup]
+2026-08-18T01:37:27.3744763Z 
+2026-08-18T01:37:27.3745593Z > deepseek-harness-desktop@0.1.0-rc.6.4 smoke
+2026-08-18T01:37:27.3746323Z > node scripts/smoke-dsh-web.mjs
+2026-08-18T01:37:27.3746633Z 
+2026-08-18T01:37:29.6954291Z smoke: engine serves http://127.0.0.1:62564 (HTTP 200)
+2026-08-18T01:37:29.8692820Z smoke: OK — embedded engine boots, serves, and shuts down cleanly
+2026-08-18T01:37:29.9645261Z ##[group]Run node scripts/win32-console-patch-probe.mjs
+2026-08-18T01:37:29.9646082Z [36;1mnode scripts/win32-console-patch-probe.mjs[0m
+2026-08-18T01:37:29.9718751Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-08-18T01:37:29.9719105Z ##[endgroup]
+2026-08-18T01:37:30.4273567Z probe FAIL (electron-run-as-node): code=1 signal=null
+2026-08-18T01:37:30.4275749Z FAIL: no inheritable console
+2026-08-18T01:37:30.4276493Z 
+2026-08-18T01:37:30.4276514Z 
+2026-08-18T01:37:30.5312929Z ##[error]Process completed with exit code 1.
+2026-08-18T01:37:30.5601403Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-18T01:37:30.5602735Z Post job cleanup.
+2026-08-18T01:37:30.7543118Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-08-18T01:37:30.7841165Z git version 2.55.0.windows.3
+2026-08-18T01:37:30.7930001Z Temporarily overriding HOME='D:\a\_temp\951381c1-b4d8-4588-9d9b-cc4a999a0999' before making global git config changes
+2026-08-18T01:37:30.7931514Z Adding repository directory to the temporary git global config as a safe directory
+2026-08-18T01:37:30.7943404Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\dsh_desktop\dsh_desktop
+2026-08-18T01:37:30.8347373Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-08-18T01:37:30.8658773Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-08-18T01:37:31.4197219Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-08-18T01:37:31.4461157Z http.https://github.com/.extraheader
+2026-08-18T01:37:31.4504030Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset-all http.https://github.com/.extraheader
+2026-08-18T01:37:31.4810078Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-08-18T01:37:31.9926349Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-08-18T01:37:32.0210007Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-08-18T01:37:32.5444890Z Cleaning up orphan processes
+2026-08-18T01:37:32.6000776Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
