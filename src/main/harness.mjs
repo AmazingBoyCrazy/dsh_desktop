@@ -37,41 +37,47 @@ export const DESKTOP_PICKER_PLUGIN_PATH = fileURLToPath(new URL('../assets/plugi
 export const WIN32_CHILD_PROCESS_PATCH_PATH = fileURLToPath(new URL('./win32-child-process-patch.mjs', import.meta.url))
 
 /**
- * Default user patch layer seeded into a FRESH web profile on first boot.
- * Ships the bundled third-party plugins (all MIT) so new installs get them
- * out of the box; an existing `cordis.patch.yml` is never touched, so
- * upgrades and users who manage their own layers are unaffected (the loader
- * throws on duplicate entry ids, which is exactly why the app must not
- * inject these rows through the runtime overlay).
+ * Default profile manifest seeded into a FRESH web profile on first boot.
+ * The bundled third-party plugins (all MIT) mount through the OFFICIAL
+ * `dsh.profile.bundles` mechanism (the same one `dsh plugin add` writes),
+ * NOT patch rows: mounting the same plugin via both bundles and
+ * cordis.patch.yml rows throws "duplicate loader entry id" at boot — the
+ * crash that repeatedly hit the maintainer's own profile. An existing
+ * package.json is never touched, so upgrades and managed profiles are
+ * unaffected. The shipped bundles (dsh-base, dsh-web-app) resolve from the
+ * installation; the bundled plugins resolve from the app's node_modules
+ * (resolveBundleDir walks the install anchor first).
  */
-export const DEFAULT_PROFILE_SEED = `# DeepSeek Harness Desktop default plugin layer (created on first boot).
-# The desktop app writes this file only when it is missing; edit freely.
-- insert:
-    - id: better-sidebar
-      name: 'dsh-better-sidebar'
-    - id: skill-mcp-panel
-      name: 'dsh-skill-mcp-panel'
-    - id: dsh-market
-      name: 'dshmarket'
-`
-
-/** Bundled third-party plugins (must match the seed rows and package.json). */
-const BUNDLED_PLUGINS = ['dsh-better-sidebar', 'dsh-skill-mcp-panel', 'dshmarket']
-
-/** Absolute path of the web profile's user patch file under one DSH_HOME. */
-export function profilePatchPath(dshHome) {
-  return join(dshHome, 'profiles', 'web', 'cordis.patch.yml')
+export const DEFAULT_PROFILE_MANIFEST = {
+  name: 'dsh-profile-web',
+  private: true,
+  dependencies: {
+    'dsh-better-sidebar': '^0.13.0',
+    'dsh-skill-mcp-panel': 'https://github.com/Fishquito7/dsh-skill-mcp-panel/releases/download/v2.0.1/dsh-skill-mcp-panel-2.0.1.tgz',
+    dshmarket: '^1.12.0',
+  },
+  dsh: {
+    profile: {
+      bundles: [
+        '@deepseek-ai/dsh-base',
+        '@deepseek-ai/dsh-web-app',
+        'dsh-better-sidebar',
+        'dshmarket',
+        'dsh-skill-mcp-panel',
+      ],
+    },
+  },
 }
+
+/** Bundled third-party plugins (must match the manifest and package.json). */
+const BUNDLED_PLUGINS = ['dsh-better-sidebar', 'dsh-skill-mcp-panel', 'dshmarket']
 
 /**
  * Link the bundled plugins into the profile's own `node_modules` so the
- * loader can resolve them on fresh installs. The engine's installation
- * fallback farm (`$DSH_HOME/profiles/node_modules`) only covers the
- * `@deepseek-ai/dsh` dependency closure — NOT the desktop app's own extra
- * dependencies — so without these links a fresh profile cannot resolve the
- * bundled plugin names (ERR_MODULE_NOT_FOUND at boot). Node's parent-directory
- * walk finds the profile's own node_modules first, which is exactly the
- * upstream contract for out-of-tree plugins.
+ * loader can resolve them on fresh installs. Bundle layers resolve from the
+ * install anchor first, but the loader's module resolution for the plugin
+ * code walks the profile directory upward; the profile's own node_modules is
+ * the first stop and keeps the resolution self-contained.
  * Idempotent: an existing real directory (e.g. pnpm-managed) or a valid
  * symlink is left alone; a wrong/dangling link is replaced.
  */
@@ -101,19 +107,19 @@ function ensureProfilePluginLinks(profileDir) {
 }
 
 /**
- * Seed the default plugin layer on first boot (fresh installs only).
+ * Seed the default profile manifest on first boot (fresh installs only).
  * Idempotent and best-effort: a missing profile directory is created; an
- * existing patch file is left alone; plugin links are healed every boot.
+ * existing package.json is left alone; plugin links are healed every boot.
  */
 export function ensureDefaultProfileSeed() {
   const dshHome = process.env.DSH_HOME ?? join(homedir(), '.dsh')
-  const patchPath = profilePatchPath(dshHome)
+  const profileDir = join(dshHome, 'profiles', 'web')
   try {
-    if (!existsSync(patchPath)) {
-      mkdirSync(dirname(patchPath), { recursive: true })
-      writeFileSync(patchPath, DEFAULT_PROFILE_SEED)
+    if (!existsSync(join(profileDir, 'package.json'))) {
+      mkdirSync(profileDir, { recursive: true })
+      writeFileSync(join(profileDir, 'package.json'), `${JSON.stringify(DEFAULT_PROFILE_MANIFEST, null, 2)}\n`)
     }
-    ensureProfilePluginLinks(dirname(patchPath))
+    ensureProfilePluginLinks(profileDir)
   } catch {
     // Best effort: a fresh install without the seed still boots (plugins
     // simply do not mount); never break startup over a seed write.

@@ -22,9 +22,9 @@ const home = mkdtempSync(join(tmpdir(), 'dsh-fresh-boot-'))
 process.env.DSH_HOME = home
 console.log('fresh DSH_HOME:', home)
 ensureDefaultProfileSeed()
-console.log('seeded cordis.patch.yml:')
+console.log('seeded package.json:')
 console.log('---')
-console.log(readFileSync(join(home, 'profiles', 'web', 'cordis.patch.yml'), 'utf8'))
+console.log(readFileSync(join(home, 'profiles', 'web', 'package.json'), 'utf8'))
 console.log('---')
 
 const entry = resolveDshEntry()

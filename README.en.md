@@ -54,15 +54,15 @@ Download the installer for your platform from [Releases](https://github.com/Amaz
 
 ## Bundled plugins
 
-The installers ship three enhancement plugins (all MIT), mounted on first boot into `~/.dsh/profiles/web/cordis.patch.yml` (written only when that file does not exist; existing configurations are untouched):
+The installers ship three enhancement plugins (all MIT), mounted on first boot through the official `dsh.profile.bundles` mechanism (written into the web profile's `package.json` only when it does not exist — identical to `dsh plugin add`, never patch rows, so no duplicate-mount crashes):
 
 | Plugin | Version | What it does | Upstream |
 | --- | --- | --- | --- |
-| `dsh-better-sidebar` | 0.12.x | Right sidebar + bottom panel workbench (resource manager / editor / terminal / Git / browser) | [omdsh-dev/DSH-better-sidebar](https://github.com/omdsh-dev/DSH-better-sidebar) |
+| `dsh-better-sidebar` | 0.13.x | Right sidebar + bottom panel workbench (resource manager / editor / terminal / Git / browser) | [omdsh-dev/DSH-better-sidebar](https://github.com/omdsh-dev/DSH-better-sidebar) |
 | `dsh-skill-mcp-panel` | 2.0.x | Skill + MCP management panel (card list / enable-disable / delete / add / group; MCP server management) | [Fishquito7/dsh-skill-mcp-panel](https://github.com/Fishquito7/dsh-skill-mcp-panel) |
-| `dshmarket` | 1.11.x | Visual plugin marketplace (browse / search / one-click install / backup / update) | [dsh-market/dsh-market](https://github.com/dsh-market/dsh-market) |
+| `dshmarket` | 1.12.x | Visual plugin marketplace (browse / search / one-click install / backup / update) | [dsh-market/dsh-market](https://github.com/dsh-market/dsh-market) |
 
-- To disable: edit `~/.dsh/profiles/web/cordis.patch.yml` and remove the row or add `disabled: true` (hot-reloads immediately, no restart needed).
+- To disable: use the marketplace UI or `dsh plugin --profile web remove <package>` (do not hand-edit plugin rows in `cordis.patch.yml` — official bundle mounts plus hand-written rows cause duplicate-entry crashes).
 - To uninstall: `cd ~/.dsh/profiles/web && pnpm remove <package>`.
 - Plugin versions are pinned by the lockfile at release time; update them before the next release if needed.
 
