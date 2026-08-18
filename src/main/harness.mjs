@@ -12,7 +12,7 @@
  */
 
 import { spawn } from 'node:child_process'
-import { createWriteStream, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { createWriteStream, existsSync, lstatSync, mkdirSync, readFileSync, statSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { createServer } from 'node:net'
 import { homedir } from 'node:os'
@@ -55,23 +55,65 @@ export const DEFAULT_PROFILE_SEED = `# DeepSeek Harness Desktop default plugin l
       name: 'dshmarket'
 `
 
+/** Bundled third-party plugins (must match the seed rows and package.json). */
+const BUNDLED_PLUGINS = ['dsh-better-sidebar', 'dsh-skill-viewer', 'dshmarket']
+
 /** Absolute path of the web profile's user patch file under one DSH_HOME. */
 export function profilePatchPath(dshHome) {
   return join(dshHome, 'profiles', 'web', 'cordis.patch.yml')
 }
 
 /**
+ * Link the bundled plugins into the profile's own `node_modules` so the
+ * loader can resolve them on fresh installs. The engine's installation
+ * fallback farm (`$DSH_HOME/profiles/node_modules`) only covers the
+ * `@deepseek-ai/dsh` dependency closure — NOT the desktop app's own extra
+ * dependencies — so without these links a fresh profile cannot resolve the
+ * bundled plugin names (ERR_MODULE_NOT_FOUND at boot). Node's parent-directory
+ * walk finds the profile's own node_modules first, which is exactly the
+ * upstream contract for out-of-tree plugins.
+ * Idempotent: an existing real directory (e.g. pnpm-managed) or a valid
+ * symlink is left alone; a wrong/dangling link is replaced.
+ */
+function ensureProfilePluginLinks(profileDir) {
+  const modulesDir = join(profileDir, 'node_modules')
+  mkdirSync(modulesDir, { recursive: true })
+  for (const name of BUNDLED_PLUGINS) {
+    let target
+    try {
+      target = dirname(require.resolve(`${name}/package.json`))
+    } catch {
+      continue // not installed in this tree (development edge) — skip
+    }
+    const link = join(modulesDir, name)
+    try {
+      if (existsSync(link)) {
+        const stat = lstatSync(link)
+        if (stat.isSymbolicLink() || stat.isDirectory()) continue
+        unlinkSync(link)
+      }
+      symlinkSync(target, link, 'junction')
+    } catch {
+      // Best effort: a failed link leaves the plugin unmounted, never breaks
+      // the boot.
+    }
+  }
+}
+
+/**
  * Seed the default plugin layer on first boot (fresh installs only).
  * Idempotent and best-effort: a missing profile directory is created; an
- * existing patch file is left alone; any failure just skips the seed.
+ * existing patch file is left alone; plugin links are healed every boot.
  */
 export function ensureDefaultProfileSeed() {
   const dshHome = process.env.DSH_HOME ?? join(homedir(), '.dsh')
   const patchPath = profilePatchPath(dshHome)
   try {
-    if (existsSync(patchPath)) return
-    mkdirSync(dirname(patchPath), { recursive: true })
-    writeFileSync(patchPath, DEFAULT_PROFILE_SEED)
+    if (!existsSync(patchPath)) {
+      mkdirSync(dirname(patchPath), { recursive: true })
+      writeFileSync(patchPath, DEFAULT_PROFILE_SEED)
+    }
+    ensureProfilePluginLinks(dirname(patchPath))
   } catch {
     // Best effort: a fresh install without the seed still boots (plugins
     // simply do not mount); never break startup over a seed write.
