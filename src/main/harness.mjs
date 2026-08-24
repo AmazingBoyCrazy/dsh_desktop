@@ -294,6 +294,10 @@ export class HarnessServer {
       '--patch', compositionPatch,
       '--host', HARNESS_HOST,
       '--port', String(this.port),
+      // The engine opens the default browser by default after binding
+      // ("opening the default browser; pass --no-open to disable"); the
+      // desktop already shows the GUI in its own window, so suppress it.
+      '--no-open',
     ]
     // The web profile mounts a watch-only HMR row that needs Node's internal
     // ESM loader. Under plain Node the `node-addon-require-builtin` fallback
