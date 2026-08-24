@@ -51,9 +51,14 @@ export function createMainWindow() {
     },
   })
 
-  // Popups: never open in-app; external http(s) links go to the system browser.
+  // Popups: never open in-app; external http(s) links go to the system
+  // browser. Loopback-origin popups (the harness GUI window.open'ing its own
+  // origin, e.g. a plugin or the GUI opening a detached view) are NOT
+  // forwarded to the browser — that would open a browser tab at
+  // http://127.0.0.1:<port> alongside the desktop window. Deny them so the
+  // GUI stays inside the Electron window (the desktop already shows it).
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^https?:/.test(url)) void shell.openExternal(url)
+    if (/^https?:/.test(url) && !LOOPBACK_ORIGIN.test(url)) void shell.openExternal(url)
     return { action: 'deny' }
   })
 
