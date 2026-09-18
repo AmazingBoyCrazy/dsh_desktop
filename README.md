@@ -19,11 +19,13 @@
 4. **新增 Windows CI**：引擎冒烟、真实 Electron 桌面冒烟、控制台补丁探针、runner 注入形状测试，全部在 Windows runner 上执行（原始壳仅 Linux CI）。
 5. **依赖显式化**：补丁依赖的 `@deepseek-ai/dsh-host-directory-picker` 显式声明，不再依赖 npm 提升（hoisting）。
 6. **鲸鱼图标**：窗口/任务栏/dock 图标替换为 DeepSeek Harness 官方鲸鱼 Logo。
-7. **内置增强插件**（均 MIT）：`dsh-better-sidebar`（右侧栏 + 底部面板工作台）、`dsh-skill-mcp-panel`（技能 + MCP 管理）、`dshmarket`（可视化插件市场）。首次启动时写入 web profile 的 `dsh.profile.bundles`（官方挂载机制，与 `dsh plugin add` 一致；仅当 `package.json` 不存在时写入，已有配置的用户不受影响）。
+7. **内置增强插件机制保留、本版本暂不随包**：插件通过官方 `dsh.profile.bundles` 机制挂载（写入 web profile 的 `package.json`，仅当不存在时；与 `dsh plugin add` 一致，绝不写 `cordis.patch.yml` 行，避免双挂载 duplicate 崩溃）。清单由 `src/main/harness.mjs` 的 `BUNDLED_PLUGINS` 驱动，当前为空（原因见"内置插件"一节）：第三方插件生态仍以 `0.1.5-rc` 引擎线为 peer 目标，混挂会导致引擎启动失败。
+8. **修复引擎 token 门禁下的白屏**：`0.1.6-alpha` 线的网页界面要求"进程级浏览器会话令牌"，裸访问回环地址会返回 401。桌面壳改为解析引擎打印的 `dsh web: http://127.0.0.1:<port>/?token=…` 就绪行，窗口按该 URL 加载（令牌一次性换取 Cookie），此前会白屏。
+9. **补全打包裁剪的引擎依赖**：electron-builder 按依赖图收集 `node_modules`，会漏掉仅以 peer 边存在的引擎包（`dsh-jobs`、`dsh-settings`、`dsh-attachment`、`dsh-session-persistence` 等 13 个），打包版启动即 `ERR_MODULE_NOT_FOUND`。这些包已在 `package.json` 显式声明。
 
 ## 工作原理
 
-桌面壳（Electron 主进程）以 `ELECTRON_RUN_AS_NODE=1` 方式把内嵌引擎（`@deepseek-ai/dsh` 的 `dsh web` 配置档）作为子进程拉起，等待其在回环地址就绪后，窗口加载引擎提供的官方网页界面。引擎只监听 `127.0.0.1`，会话、设置、插件全部存放在 `~/.dsh`，与 CLI 完全共享。
+桌面壳（Electron 主进程）以 `ELECTRON_RUN_AS_NODE=1` 方式把内嵌引擎（`@deepseek-ai/dsh` 的 `dsh web` 配置档）作为子进程拉起，等引擎打印带令牌的就绪行后，窗口加载该 URL（引擎的网页界面在 `0.1.6-alpha` 线要求进程级令牌，裸回环地址返回 401）。引擎只监听 `127.0.0.1`，会话、设置、插件全部存放在 `~/.dsh`，与 CLI 完全共享。
 
 ```
 桌面壳（Electron）──守护──▶ 引擎子进程（Electron Node 24）
@@ -55,16 +57,11 @@
 
 ## 内置插件
 
-安装包随附三个增强插件（均为 MIT 许可），首次启动通过官方 `dsh.profile.bundles` 机制挂载（写入 web profile 的 `package.json`，仅当不存在时；与 `dsh plugin add` 完全一致，不写 `cordis.patch.yml` 行，避免双挂载冲突）：
+**本版本（`0.1.6-alpha.2` 引擎线）不随包附带任何第三方插件**：插件生态当前仍以 `0.1.5-rc` 引擎为 peer 目标，版本不匹配会让引擎启动直接失败（fail-loud），因此优先保证"装了就能开"。首次启动只挂载引擎自带的 `@deepseek-ai/dsh-base`、`@deepseek-ai/dsh-web-app` 两个 bundle（由引擎自身初始化 profile，桌面壳不再写 seed）。
 
-| 插件 | 版本 | 功能 | 上游 |
-| --- | --- | --- | --- |
-| `dsh-better-sidebar` | 0.13.x | 右侧栏 + 底部面板工作台（资源管理器 / 编辑器 / 终端 / Git / 浏览器） | [omdsh-dev/DSH-better-sidebar](https://github.com/omdsh-dev/DSH-better-sidebar) |
-| `dsh-skill-mcp-panel` | 2.0.x | 技能 + MCP 管理面板（卡片列表 / 启停 / 删除 / 添加 / 分组；MCP 服务器管理） | [Fishquito7/dsh-skill-mcp-panel](https://github.com/Fishquito7/dsh-skill-mcp-panel) |
-| `dshmarket` | 1.12.x | 可视化插件市场（浏览 / 搜索 / 一键安装 / 备份 / 更新） | [dsh-market/dsh-market](https://github.com/dsh-market/dsh-market) |
-
-- **禁用插件**：用插件市场 UI 或 `dsh plugin --profile web remove <包名>`（不要手改 `cordis.patch.yml` 的插件行——官方 bundle 挂载和手写行同时存在会触发 duplicate 崩溃）。
-- 上述插件版本随发版固定（lockfile 锁定），需要升级时在下一版发布前手动更新。
+- **想要增强插件**：等对应插件支持本条引擎线后，用插件市场 UI 或 `dsh plugin --profile web add <包名>` 安装——两者都走官方 `dsh.profile.bundles` 机制。
+- **重新随包内置**：把包名填进 `src/main/harness.mjs` 的 `BUNDLED_PLUGINS`（空数组即"不内置"），profile 清单与依赖列表都由它派生；同时把包名加回 `package.json` 的 `dependencies`，否则打包后解析不到。
+- **禁用/卸载插件**：用插件市场 UI 或 `dsh plugin --profile web remove <包名>`。**不要手改 `cordis.patch.yml` 的插件行**——官方 bundle 挂载与手写行同时存在会触发 `duplicate loader entry id` 崩溃（本仓库早期版本踩过这个坑）。
 
 ## 从源码开发
 
@@ -79,6 +76,12 @@ npm start
 
 常用脚本：`npm start`（开发模式）、`npm run smoke`（引擎冒烟）、`npm run dist`（打包）、`npm run check:upstream`（检查上游引擎版本）。
 
+开发模式注意：
+
+- `npm start` 与已安装的桌面版**共用同一个 `userData` 目录与单实例锁**，已安装版本正在运行时开发模式会直接退出（表现为"点了没反应"）。先完全退出已安装版本，或换一份数据目录：`npx electron . --user-data-dir=<某空目录>`。
+- **Electron 版本必须精确等于 `44.0.0`**：引擎通过 `node-addon-require-builtin` 读取 Node 内部模块（配置档解析需要），该原生模块只支持精确指纹（`43.0.0`、`44.0.0`、`45.0.0-alpha.6`），换成 `43.4.0`、`^44` 等都会让引擎启动即失败（`Unsupported/no-context`）。上游官方桌面版同样固定在 Electron 44。
+- 在 DSH 引擎里开的终端会继承 `ELECTRON_RUN_AS_NODE=1`，此时 `npm start` 会把 Electron 当纯 Node 跑并报 `does not provide an export named 'Menu'`；在普通终端里运行，或先 `Remove-Item Env:\ELECTRON_RUN_AS_NODE`。
+
 ## 自动发版
 
 `release.yml` 每日定时检查 npm 官方仓库：上游 `@deepseek-ai/dsh` 发布新版本后自动固定版本、构建三平台安装包并发布 GitHub Release，全程无需人工介入。手动触发：Actions → Release → Run workflow。
@@ -86,6 +89,8 @@ npm start
 ## 已知限制
 
 - **安装包未签名**（macOS Gatekeeper / Windows SmartScreen 提示；代码签名在路线图中）。
+- **Electron 版本被引擎钉死**：必须精确 `44.0.0`（原生模块指纹限制），因此不能在发版前随意升级 Electron；升级前请确认目标版本出现在 `node-addon-native-custom-loader` 的支持列表里。
+- **本版不内置第三方插件**（生态尚未跟上 `0.1.6-alpha` 引擎线），需自行从插件市场安装。
 - **Windows 退出时引擎为硬终止**：Windows 不支持 SIGTERM 优雅停机，退出应用可能丢失少量未落盘会话数据（上游 CLI 在 POSIX 下无此问题）。
 - **应用内自动更新依赖网络**：更新检查走 GitHub，被代理/网络环境拦截时（表现为日志中 SSL 握手失败）请手动下载安装包。
 - 引擎继承上游运行要求（shell 工具需要宿主机具备 PowerShell 等）。

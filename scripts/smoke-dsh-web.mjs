@@ -20,7 +20,7 @@ import { dirname, join, resolve } from 'node:path'
 const require = createRequire(import.meta.url)
 
 const BOOT_TIMEOUT_MS = 120_000
-const URL_LINE_PATTERN = /dsh web: (http:\/\/127\.0\.0\.1:\d+)/
+const URL_LINE_PATTERN = /dsh web: (\S+)/
 
 /** Fail with a clear message and a non-zero exit. */
 function fail(message) {
@@ -57,10 +57,11 @@ let stderr = ''
 child.stderr.on('data', (chunk) => { stderr += chunk })
 
 let ready = false
-const url = await new Promise((resolve) => {
+const launchUrl = await new Promise((resolve) => {
   const timer = setTimeout(() => { fail(`no URL line within ${BOOT_TIMEOUT_MS}ms\n${stderr}\n${stdout}`) }, BOOT_TIMEOUT_MS)
-  const onData = (chunk) => {
-    const match = chunk.match(URL_LINE_PATTERN)
+  const onData = () => {
+    // The line can straddle chunk boundaries, so match the accumulated text.
+    const match = stdout.match(URL_LINE_PATTERN)
     if (match !== null) {
       ready = true
       clearTimeout(timer)
@@ -77,20 +78,40 @@ const url = await new Promise((resolve) => {
   })
 })
 
+// The GUI sits behind a per-process browser-session token: request the token
+// URL with the exact authority the engine printed, take the cookie it mints,
+// and only then expect the page. This mirrors what the desktop window loads.
+const origin = new URL(launchUrl)
+origin.search = ''
+origin.hash = ''
 let status = 0
 try {
-  const response = await fetch(url, { signal: AbortSignal.timeout(15_000) })
+  const handshake = await fetch(launchUrl, { redirect: 'manual', signal: AbortSignal.timeout(15_000) })
+  await handshake.arrayBuffer()
+  if (handshake.status !== 303) {
+    child.kill('SIGKILL')
+    fail(`GET ${launchUrl} -> HTTP ${String(handshake.status)} (expected 303 to /)\n${stderr}`)
+  }
+  const cookie = handshake.headers.getSetCookie().map((value) => value.split(';')[0]).join('; ')
+  if (cookie === '') {
+    child.kill('SIGKILL')
+    fail(`GET ${launchUrl} set no browser-session cookie\n${stderr}`)
+  }
+  const response = await fetch(origin, {
+    headers: { cookie },
+    signal: AbortSignal.timeout(15_000),
+  })
   status = response.status
   await response.arrayBuffer()
 } catch (error) {
   child.kill('SIGKILL')
-  fail(`GET ${url} failed: ${String(error)}\n${stderr}`)
+  fail(`authenticated GET ${origin.href} failed: ${String(error)}\n${stderr}`)
 }
 if (status !== 200) {
   child.kill('SIGKILL')
-  fail(`GET ${url} -> HTTP ${String(status)} (expected 200)\n${stderr}`)
+  fail(`authenticated GET ${origin.href} -> HTTP ${String(status)} (expected 200)\n${stderr}`)
 }
-console.log(`smoke: engine serves ${url} (HTTP 200)`)
+console.log(`smoke: engine serves ${origin.href} (HTTP 200 after token handshake)`)
 
 // The harness treats SIGTERM as a supervisor's stop request and exits 0.
 // That graceful path exists on POSIX only: on Windows, SIGTERM is a hard
@@ -115,5 +136,19 @@ if (process.platform === 'win32') {
   fail(`engine did not shut down cleanly: code ${String(exit.code)} signal ${String(exit.signal)}`)
 }
 
-await rm(home, { recursive: true, force: true })
+// Cleanup is best-effort: on Windows the just-terminated engine can still hold
+// its DSH_HOME handles for a moment, and EBUSY from a temp directory must not
+// fail a smoke that already proved the engine boots, serves and stops.
+for (let attempt = 0; ; attempt += 1) {
+  try {
+    await rm(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 })
+    break
+  } catch (error) {
+    if (attempt >= 2) {
+      console.log(`smoke: leaving ${home} behind (${String(error)})`)
+      break
+    }
+    await new Promise((resolve) => { setTimeout(resolve, 500) })
+  }
+}
 console.log('smoke: OK — embedded engine boots, serves, and shuts down cleanly')

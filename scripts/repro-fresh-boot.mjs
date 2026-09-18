@@ -13,7 +13,7 @@
  */
 
 import { spawn } from 'node:child_process'
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ensureDefaultProfileSeed, resolveDshEntry } from '../src/main/harness.mjs'
@@ -22,10 +22,15 @@ const home = mkdtempSync(join(tmpdir(), 'dsh-fresh-boot-'))
 process.env.DSH_HOME = home
 console.log('fresh DSH_HOME:', home)
 ensureDefaultProfileSeed()
-console.log('seeded package.json:')
-console.log('---')
-console.log(readFileSync(join(home, 'profiles', 'web', 'package.json'), 'utf8'))
-console.log('---')
+const profileManifest = join(home, 'profiles', 'web', 'package.json')
+if (existsSync(profileManifest)) {
+  console.log('seeded package.json:')
+  console.log('---')
+  console.log(readFileSync(profileManifest, 'utf8'))
+  console.log('---')
+} else {
+  console.log('no bundled plugins — desktop seed skipped; the engine initializes the profile itself')
+}
 
 const entry = resolveDshEntry()
 const child = spawn(process.execPath, [entry, 'web', '--host', '127.0.0.1', '--port', '0'], {
@@ -54,6 +59,12 @@ function finish() {
   console.log(out.split('\n').slice(-30).join('\n'))
   console.log('=== engine stderr (tail) ===')
   console.log(err.split('\n').slice(-60).join('\n'))
+  console.log('=== profile after boot ===')
+  try {
+    console.log(readFileSync(profileManifest, 'utf8'))
+  } catch {
+    console.log('(no profile package.json was created)')
+  }
   try { rmSync(home, { recursive: true, force: true }) } catch { /* keep for inspection */ }
   process.exit(0)
 }

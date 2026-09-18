@@ -37,40 +37,45 @@ export const DESKTOP_PICKER_PLUGIN_PATH = fileURLToPath(new URL('../assets/plugi
 export const WIN32_CHILD_PROCESS_PATCH_PATH = fileURLToPath(new URL('./win32-child-process-patch.mjs', import.meta.url))
 
 /**
- * Default profile manifest seeded into a FRESH web profile on first boot.
- * The bundled third-party plugins (all MIT) mount through the OFFICIAL
+ * Bundled third-party plugins, mounted through the OFFICIAL
  * `dsh.profile.bundles` mechanism (the same one `dsh plugin add` writes),
  * NOT patch rows: mounting the same plugin via both bundles and
  * cordis.patch.yml rows throws "duplicate loader entry id" at boot — the
- * crash that repeatedly hit the maintainer's own profile. An existing
- * package.json is never touched, so upgrades and managed profiles are
- * unaffected. The shipped bundles (dsh-base, dsh-web-app) resolve from the
- * installation; the bundled plugins resolve from the app's node_modules
- * (resolveBundleDir walks the install anchor first).
+ * crash that repeatedly hit the maintainer's own profile.
+ *
+ * EMPTY for the 0.1.6-alpha line: the third-party ecosystem (better-sidebar,
+ * dshmarket, skill-mcp-panel, ...) currently targets the 0.1.5-rc engine
+ * line, and a mismatched plugin fails the whole engine boot (fail-loud).
+ * A fresh install therefore starts with the official surface only; install
+ * plugins later from the marketplace once they support this engine line.
+ * Refill this list to re-enable them; the profile manifest seeded below is
+ * derived from it.
  */
-export const DEFAULT_PROFILE_MANIFEST = {
-  name: 'dsh-profile-web',
-  private: true,
-  dependencies: {
-    'dsh-better-sidebar': '^0.13.0',
-    'dsh-skill-mcp-panel': 'https://github.com/Fishquito7/dsh-skill-mcp-panel/releases/download/v2.0.1/dsh-skill-mcp-panel-2.0.1.tgz',
-    dshmarket: '^1.12.0',
-  },
-  dsh: {
-    profile: {
-      bundles: [
-        '@deepseek-ai/dsh-base',
-        '@deepseek-ai/dsh-web-app',
-        'dsh-better-sidebar',
-        'dshmarket',
-        'dsh-skill-mcp-panel',
-      ],
-    },
-  },
-}
+const BUNDLED_PLUGINS = []
 
-/** Bundled third-party plugins (must match the manifest and package.json). */
-const BUNDLED_PLUGINS = ['dsh-better-sidebar', 'dsh-skill-mcp-panel', 'dshmarket']
+/**
+ * Default profile manifest seeded into a FRESH web profile on first boot,
+ * derived from {@link BUNDLED_PLUGINS}. An existing package.json is never
+ * touched, so upgrades and managed profiles are unaffected; with no bundled
+ * plugins the seed is skipped entirely and the engine's own profile init
+ * (shipped bundles only) applies.
+ */
+export function defaultProfileManifest() {
+  return {
+    name: 'dsh-profile-web',
+    private: true,
+    dependencies: Object.fromEntries(BUNDLED_PLUGINS.map((name) => [name, 'latest'])),
+    dsh: {
+      profile: {
+        bundles: [
+          '@deepseek-ai/dsh-base',
+          '@deepseek-ai/dsh-web-app',
+          ...BUNDLED_PLUGINS,
+        ],
+      },
+    },
+  }
+}
 
 /**
  * Link the bundled plugins into the profile's own `node_modules` so the
@@ -108,16 +113,19 @@ function ensureProfilePluginLinks(profileDir) {
 
 /**
  * Seed the default profile manifest on first boot (fresh installs only).
- * Idempotent and best-effort: a missing profile directory is created; an
- * existing package.json is left alone; plugin links are healed every boot.
+ * Skipped entirely when no plugins are bundled — the engine's own profile
+ * init then creates the shipped-bundle profile. Idempotent and best-effort:
+ * a missing profile directory is created; an existing package.json is left
+ * alone; plugin links are healed every boot.
  */
 export function ensureDefaultProfileSeed() {
+  if (BUNDLED_PLUGINS.length === 0) return
   const dshHome = process.env.DSH_HOME ?? join(homedir(), '.dsh')
   const profileDir = join(dshHome, 'profiles', 'web')
   try {
     if (!existsSync(join(profileDir, 'package.json'))) {
       mkdirSync(profileDir, { recursive: true })
-      writeFileSync(join(profileDir, 'package.json'), `${JSON.stringify(DEFAULT_PROFILE_MANIFEST, null, 2)}\n`)
+      writeFileSync(join(profileDir, 'package.json'), `${JSON.stringify(defaultProfileManifest(), null, 2)}\n`)
     }
     ensureProfilePluginLinks(profileDir)
   } catch {
@@ -177,6 +185,18 @@ export const HARNESS_LOG_FILENAME = 'dsh-web.log'
 
 /** Engine logs are rotated by truncation once they pass this size. */
 const HARNESS_LOG_MAX_BYTES = 2 * 1024 * 1024
+
+/**
+ * The engine's readiness line, `dsh web: <url>`: the URL carries the
+ * per-process browser-session token. The GUI answers 401 without that token
+ * (or the cookie the token mints), so the shell must load exactly this URL
+ * rather than a bare origin. The LAN variant that may follow (" (LAN: ...)")
+ * is deliberately not matched.
+ */
+const LAUNCH_URL_PATTERN = /dsh web: (\S+)/
+
+/** Tail of the engine's stdout kept for {@link LAUNCH_URL_PATTERN} matching. */
+const LAUNCH_SCAN_MAX_CHARS = 4_096
 
 /**
  * Absolute path of the published dsh entry (`lib/bin.js`). The package ships
@@ -257,10 +277,18 @@ export class HarnessServer {
     this.child = undefined
     this.logStream = undefined
     this.stopping = false
+    /** Token-bearing URL from the engine's readiness line, once printed. */
+    this.launchUrl = undefined
+    this.launchScan = ''
   }
 
   /** The URL the engine serves, once started. */
   get url() {
+    return this.launchUrl ?? this.baseUrl
+  }
+
+  /** Loopback origin the engine binds, without the browser-session token. */
+  get baseUrl() {
     return `http://${HARNESS_HOST}:${String(this.port)}`
   }
 
@@ -359,6 +387,10 @@ export class HarnessServer {
       windowsHide: true,
     })
     this.stopping = false
+    this.launchUrl = undefined
+    this.launchScan = ''
+    this.child.stdout.setEncoding('utf8')
+    this.child.stdout.on('data', (chunk) => { this.captureLaunchUrl(chunk) })
     this.child.stdout.pipe(this.logStream, { end: false })
     this.child.stderr.pipe(this.logStream, { end: false })
     if (this.onChildMessage !== undefined) {
@@ -378,6 +410,19 @@ export class HarnessServer {
   }
 
   /**
+   * Record the token-bearing URL line the engine prints once it is listening.
+   * Chunk boundaries are arbitrary, so matching runs over the retained tail of
+   * everything printed so far.
+   * @param chunk - decoded stdout chunk.
+   */
+  captureLaunchUrl(chunk) {
+    if (this.launchUrl !== undefined) return
+    this.launchScan = (this.launchScan + chunk).slice(-LAUNCH_SCAN_MAX_CHARS)
+    const match = LAUNCH_URL_PATTERN.exec(this.launchScan)
+    if (match !== null) this.launchUrl = match[1]
+  }
+
+  /**
    * Poll the engine until it answers HTTP on loopback.
    * @param options.timeoutMs - maximum wait before rejecting.
    * @throws when the child exits or the timeout expires first.
@@ -389,16 +434,21 @@ export class HarnessServer {
         throw new Error(`harness engine exited before becoming ready (log: ${this.logPath})`)
       }
       try {
-        const response = await fetch(this.url, { signal: AbortSignal.timeout(2_000) })
-        // Any HTTP answer means the webserver bound and serves; the dist
-        // fallback answers even before the Loader settles, which is exactly
-        // the readiness the window needs.
-        if (response.status > 0) return
+        const response = await fetch(this.baseUrl, {
+          redirect: 'manual',
+          signal: AbortSignal.timeout(2_000),
+        })
+        // 401 is the engine's browser-session gate answering before its URL
+        // line is printed; that line carries the token the window needs, so
+        // keep waiting for it. Any other answer is a served page.
+        if (response.status !== 401) return
       } catch {
         // Not listening yet (or fetch raced the bind); keep polling.
       }
+      // Readiness means the URL line arrived: the window load needs the token.
+      if (this.launchUrl !== undefined) return
       if (Date.now() >= deadline) {
-        throw new Error(`harness engine did not answer ${this.url} within ${String(timeoutMs)}ms (log: ${this.logPath})`)
+        throw new Error(`harness engine did not answer ${this.baseUrl} within ${String(timeoutMs)}ms (log: ${this.logPath})`)
       }
       await sleep(POLL_INTERVAL_MS)
     }

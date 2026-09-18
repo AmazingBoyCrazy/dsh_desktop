@@ -27,6 +27,32 @@ const state = {
   port: undefined,
 }
 
+/**
+ * CI-only smoke assertion: the window rendered the GUI rather than the
+ * engine's plain-text body. The engine gates its index behind a per-process
+ * browser-session token, so a shell that loads a bare origin shows
+ * "dsh web authentication required" instead of the app — the regression this
+ * check exists to catch. Polls because the client bundle boots asynchronously.
+ * @param window - the window that loaded the engine URL.
+ * @param timeoutMs - maximum wait for the mount point to gain children.
+ * @returns true once `#root` has rendered content.
+ */
+async function guiRendered(window, timeoutMs = 30_000) {
+  const deadline = Date.now() + timeoutMs
+  for (;;) {
+    try {
+      const mounted = await window.webContents.executeJavaScript(
+        'document.querySelector("#root")?.childElementCount ?? 0', true,
+      )
+      if (typeof mounted === 'number' && mounted > 0) return true
+    } catch {
+      // The renderer may still be navigating; retry until the deadline.
+    }
+    if (Date.now() >= deadline) return false
+    await new Promise((resolve) => { setTimeout(resolve, 500) })
+  }
+}
+
 /** Port candidates: env override first, then the built-in defaults. */
 function preferredPorts() {
   const env = (process.env[PORT_ENV] ?? '').split(',').map((p) => Number.parseInt(p.trim(), 10)).filter((p) => Number.isInteger(p) && p > 0 && p < 65536)
@@ -181,10 +207,16 @@ if (!app.requestSingleInstanceLock()) {
       await bootAndNavigate()
       initUpdater()
       // CI-only hook (see ci.yml): prove the full Electron path — spawn with
-      // ELECTRON_RUN_AS_NODE + --expose-internals, readiness, then a clean
-      // quit that exercises will-quit -> engine shutdown.
+      // ELECTRON_RUN_AS_NODE + --expose-internals, readiness, a rendered GUI,
+      // then a clean quit that exercises will-quit -> engine shutdown.
       if (process.env.DSH_DESKTOP_SMOKE === '1') {
-        log('info', 'desktop smoke: ready, quitting')
+        if (mainWindow === undefined || !await guiRendered(mainWindow)) {
+          log('error', `desktop smoke: the GUI did not render at ${harness.url}`)
+          showError(new Error('desktop smoke: the GUI did not render'))
+          app.exit(1)
+          return
+        }
+        log('info', 'desktop smoke: GUI rendered, quitting')
         app.quit()
       }
     } catch (error) {
