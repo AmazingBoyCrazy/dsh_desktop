@@ -20,12 +20,12 @@
 5. **依赖显式化**：补丁依赖的 `@deepseek-ai/dsh-host-directory-picker` 显式声明，不再依赖 npm 提升（hoisting）。
 6. **鲸鱼图标**：窗口/任务栏/dock 图标替换为 DeepSeek Harness 官方鲸鱼 Logo。
 7. **内置增强插件机制保留、本版本暂不随包**：插件通过官方 `dsh.profile.bundles` 机制挂载（写入 web profile 的 `package.json`，仅当不存在时；与 `dsh plugin add` 一致，绝不写 `cordis.patch.yml` 行，避免双挂载 duplicate 崩溃）。清单由 `src/main/harness.mjs` 的 `BUNDLED_PLUGINS` 驱动，当前为空（原因见"内置插件"一节）：第三方插件生态仍以 `0.1.5-rc` 引擎线为 peer 目标，混挂会导致引擎启动失败。
-8. **修复引擎 token 门禁下的白屏**：`0.1.6-alpha` 线的网页界面要求"进程级浏览器会话令牌"，裸访问回环地址会返回 401。桌面壳改为解析引擎打印的 `dsh web: http://127.0.0.1:<port>/?token=…` 就绪行，窗口按该 URL 加载（令牌一次性换取 Cookie），此前会白屏。
+8. **修复引擎 token 门禁下的白屏**：`0.1.6-alpha` 起的网页界面要求"进程级浏览器会话令牌"，裸访问回环地址会返回 401。桌面壳改为解析引擎打印的 `dsh web: http://127.0.0.1:<port>/?token=…` 就绪行，窗口按该 URL 加载（令牌一次性换取 Cookie），此前会白屏。
 9. **补全打包裁剪的引擎依赖**：electron-builder 按依赖图收集 `node_modules`，会漏掉仅以 peer 边存在的引擎包（`dsh-jobs`、`dsh-settings`、`dsh-attachment`、`dsh-session-persistence` 等 13 个），打包版启动即 `ERR_MODULE_NOT_FOUND`。这些包已在 `package.json` 显式声明。
 
 ## 工作原理
 
-桌面壳（Electron 主进程）以 `ELECTRON_RUN_AS_NODE=1` 方式把内嵌引擎（`@deepseek-ai/dsh` 的 `dsh web` 配置档）作为子进程拉起，等引擎打印带令牌的就绪行后，窗口加载该 URL（引擎的网页界面在 `0.1.6-alpha` 线要求进程级令牌，裸回环地址返回 401）。引擎只监听 `127.0.0.1`，会话、设置、插件全部存放在 `~/.dsh`，与 CLI 完全共享。
+桌面壳（Electron 主进程）以 `ELECTRON_RUN_AS_NODE=1` 方式把内嵌引擎（`@deepseek-ai/dsh` 的 `dsh web` 配置档）作为子进程拉起，等引擎打印带令牌的就绪行后，窗口加载该 URL（引擎的网页界面从 `0.1.6-alpha` 起要求进程级令牌，裸回环地址返回 401）。引擎只监听 `127.0.0.1`，会话、设置、插件全部存放在 `~/.dsh`，与 CLI 完全共享。
 
 ```
 桌面壳（Electron）──守护──▶ 引擎子进程（Electron Node 24）
@@ -57,7 +57,7 @@
 
 ## 内置插件
 
-**本版本（`0.1.6-alpha.2` 引擎线）不随包附带任何第三方插件**：插件生态当前仍以 `0.1.5-rc` 引擎为 peer 目标，版本不匹配会让引擎启动直接失败（fail-loud），因此优先保证"装了就能开"。首次启动只挂载引擎自带的 `@deepseek-ai/dsh-base`、`@deepseek-ai/dsh-web-app` 两个 bundle（由引擎自身初始化 profile，桌面壳不再写 seed）。
+**本版本（`0.1.7-alpha.2` 引擎线）不随包附带任何第三方插件**：插件生态当前仍以 `0.1.5-rc` 引擎为 peer 目标，版本不匹配会让引擎启动直接失败（fail-loud），因此优先保证"装了就能开"。首次启动只挂载引擎自带的 `@deepseek-ai/dsh-base`、`@deepseek-ai/dsh-web-app` 两个 bundle（由引擎自身初始化 profile，桌面壳不再写 seed）。
 
 - **想要增强插件**：等对应插件支持本条引擎线后，用插件市场 UI 或 `dsh plugin --profile web add <包名>` 安装——两者都走官方 `dsh.profile.bundles` 机制。
 - **重新随包内置**：把包名填进 `src/main/harness.mjs` 的 `BUNDLED_PLUGINS`（空数组即"不内置"），profile 清单与依赖列表都由它派生；同时把包名加回 `package.json` 的 `dependencies`，否则打包后解析不到。
@@ -90,7 +90,7 @@ npm start
 
 - **安装包未签名**（macOS Gatekeeper / Windows SmartScreen 提示；代码签名在路线图中）。
 - **Electron 版本被引擎钉死**：必须精确 `44.0.0`（原生模块指纹限制），因此不能在发版前随意升级 Electron；升级前请确认目标版本出现在 `node-addon-native-custom-loader` 的支持列表里。
-- **本版不内置第三方插件**（生态尚未跟上 `0.1.6-alpha` 引擎线），需自行从插件市场安装。
+- **本版不内置第三方插件**（生态尚未跟上 `0.1.7-alpha` 引擎线），需自行从插件市场安装。
 - **Windows 退出时引擎为硬终止**：Windows 不支持 SIGTERM 优雅停机，退出应用可能丢失少量未落盘会话数据（上游 CLI 在 POSIX 下无此问题）。
 - **应用内自动更新依赖网络**：更新检查走 GitHub，被代理/网络环境拦截时（表现为日志中 SSL 握手失败）请手动下载安装包。
 - 引擎继承上游运行要求（shell 工具需要宿主机具备 PowerShell 等）。
