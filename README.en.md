@@ -57,7 +57,7 @@ Download the installer for your platform from [Releases](https://github.com/Amaz
 
 ## Bundled plugins
 
-**This version (the `0.1.7-alpha.2` engine line) ships no third-party plugins**: the plugin ecosystem still targets the `0.1.5-rc` engine as its peer, and a version mismatch makes the engine fail to boot outright (fail-loud), so "installs and just opens" comes first. A fresh profile mounts only the engine's own `@deepseek-ai/dsh-base` and `@deepseek-ai/dsh-web-app` bundles (the engine initializes the profile itself; the desktop shell no longer writes a seed).
+**This version (the `0.1.7-rc.1` engine line) ships no third-party plugins**: the plugin ecosystem still targets the `0.1.5-rc` engine as its peer, and a version mismatch makes the engine fail to boot outright (fail-loud), so "installs and just opens" comes first. A fresh profile mounts only the engine's own `@deepseek-ai/dsh-base` and `@deepseek-ai/dsh-web-app` bundles (the engine initializes the profile itself; the desktop shell no longer writes a seed).
 
 - **Wanting enhancement plugins**: once the plugin in question supports this engine line, install it from the marketplace UI or with `dsh plugin --profile web add <package>` — both go through the official `dsh.profile.bundles` mechanism.
 - **Bundling again**: put the package names into `BUNDLED_PLUGINS` in `src/main/harness.mjs` (an empty array means "bundle nothing"); both the profile manifest and the dependency list are derived from it. Also add the package back to `package.json` `dependencies`, otherwise it cannot be resolved after packaging.
@@ -90,7 +90,7 @@ Dev-mode caveats:
 
 - **Unsigned installers** (macOS Gatekeeper / Windows SmartScreen prompts; code signing is on the roadmap).
 - **The Electron version is pinned by the engine**: exactly `44.0.0` (native-module fingerprint requirement), so do not bump Electron casually before a release; before upgrading, confirm the target version appears in the supported list of `node-addon-native-custom-loader`.
-- **This version bundles no third-party plugins** (the ecosystem has not caught up with the `0.1.7-alpha` engine line yet); install them yourself from the marketplace.
+- **This version bundles no third-party plugins** (the ecosystem has not caught up with the `0.1.7-rc` engine line yet); install them yourself from the marketplace.
 - **Windows shutdown is a hard kill**: Windows has no SIGTERM graceful shutdown, so quitting may lose a small amount of unsaved session data (POSIX is unaffected).
 - **In-app updates depend on the network**: update checks use GitHub; when a proxy/network blocks it (SSL handshake failures in the logs), download installers manually.
 - The engine inherits upstream runtime requirements (shell tools need PowerShell etc. on the host).

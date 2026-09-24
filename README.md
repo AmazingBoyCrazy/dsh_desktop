@@ -57,7 +57,7 @@
 
 ## 内置插件
 
-**本版本（`0.1.7-alpha.2` 引擎线）不随包附带任何第三方插件**：插件生态当前仍以 `0.1.5-rc` 引擎为 peer 目标，版本不匹配会让引擎启动直接失败（fail-loud），因此优先保证"装了就能开"。首次启动只挂载引擎自带的 `@deepseek-ai/dsh-base`、`@deepseek-ai/dsh-web-app` 两个 bundle（由引擎自身初始化 profile，桌面壳不再写 seed）。
+**本版本（`0.1.7-rc.1` 引擎线）不随包附带任何第三方插件**：插件生态当前仍以 `0.1.5-rc` 引擎为 peer 目标，版本不匹配会让引擎启动直接失败（fail-loud），因此优先保证"装了就能开"。首次启动只挂载引擎自带的 `@deepseek-ai/dsh-base`、`@deepseek-ai/dsh-web-app` 两个 bundle（由引擎自身初始化 profile，桌面壳不再写 seed）。
 
 - **想要增强插件**：等对应插件支持本条引擎线后，用插件市场 UI 或 `dsh plugin --profile web add <包名>` 安装——两者都走官方 `dsh.profile.bundles` 机制。
 - **重新随包内置**：把包名填进 `src/main/harness.mjs` 的 `BUNDLED_PLUGINS`（空数组即"不内置"），profile 清单与依赖列表都由它派生；同时把包名加回 `package.json` 的 `dependencies`，否则打包后解析不到。
@@ -90,7 +90,7 @@ npm start
 
 - **安装包未签名**（macOS Gatekeeper / Windows SmartScreen 提示；代码签名在路线图中）。
 - **Electron 版本被引擎钉死**：必须精确 `44.0.0`（原生模块指纹限制），因此不能在发版前随意升级 Electron；升级前请确认目标版本出现在 `node-addon-native-custom-loader` 的支持列表里。
-- **本版不内置第三方插件**（生态尚未跟上 `0.1.7-alpha` 引擎线），需自行从插件市场安装。
+- **本版不内置第三方插件**（生态尚未跟上 `0.1.7-rc` 引擎线），需自行从插件市场安装。
 - **Windows 退出时引擎为硬终止**：Windows 不支持 SIGTERM 优雅停机，退出应用可能丢失少量未落盘会话数据（上游 CLI 在 POSIX 下无此问题）。
 - **应用内自动更新依赖网络**：更新检查走 GitHub，被代理/网络环境拦截时（表现为日志中 SSL 握手失败）请手动下载安装包。
 - 引擎继承上游运行要求（shell 工具需要宿主机具备 PowerShell 等）。
